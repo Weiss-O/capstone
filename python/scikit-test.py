@@ -3,8 +3,8 @@ import cv2
 import numpy as np
 
 # Load images
-before = cv2.imread('test_images/baseline_1.jpg')
-after = cv2.imread('test_images/baseline_2.jpg')
+before = cv2.imread('test_images/fr_baseline.jpg')
+after = cv2.imread('test_images/fr_test.jpg')
 
 # Convert images to grayscale
 before_gray = cv2.cvtColor(before, cv2.COLOR_BGR2GRAY)
@@ -25,10 +25,22 @@ print("Image Similarity: {:.4f}%".format(score * 100))
 diff = (diff * 255).astype("uint8")
 diff_box = cv2.merge([diff, diff, diff])
 
-# Threshold the difference image, followed by finding contours to
-# obtain the regions of the two input images that differ
-thresh = cv2.threshold(diff, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
-contours = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+thresh, threshed_img = cv2.threshold(diff, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
+
+# Check how close the diff values are to the threshold on average
+mean_diff_value = np.mean(np.abs(diff-thresh))
+print("Mean diff value: {:.2f}".format(mean_diff_value))
+print("Otsu's threshold value: {:.2f}".format(thresh))
+
+# Determine if Otsu's thresholding is appropriate
+if mean_diff_value > 10:  # You can adjust this threshold value as needed
+    print("Otsu's thresholding is appropriate.")
+else:
+    threshed_img = cv2.threshold(diff, 0, 255, cv2.THRESH_BINARY_INV)[1]
+
+
+
+contours = cv2.findContours(threshed_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 contours = contours[0] if len(contours) == 2 else contours[1]
 
 mask = np.zeros(before.shape, dtype='uint8')
@@ -36,7 +48,7 @@ filled_after = after.copy()
 
 for c in contours:
     area = cv2.contourArea(c)
-    if area > 4000:
+    if area > 400:
         x,y,w,h = cv2.boundingRect(c)
         cv2.rectangle(before, (x, y), (x + w, y + h), (36,255,12), 2)
         cv2.rectangle(after, (x, y), (x + w, y + h), (36,255,12), 2)
