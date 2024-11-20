@@ -162,3 +162,6 @@ cython_debug/
 #.idea/
 
 python/output/
+python/KNN_testing
+python/KNN_training
+
