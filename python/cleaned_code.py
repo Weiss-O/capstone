@@ -29,8 +29,8 @@ def lbp_map(image):
     return feature.local_binary_pattern(gray, 1, 1, method="uniform")
 
 # Load and process images
-before = cv2.imread('./test_set/capture_2.jpg')
-after = cv2.imread('./test_set/capture_41.jpg')
+before = cv2.imread('./python/test_set/capture_2.jpg')
+after = cv2.imread('./python/test_set/capture_41.jpg')
 before_gray, after_gray = [cv2.GaussianBlur(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY), (5, 5), 0) for img in (before, after)]
 
 # Compute SSIM
@@ -58,13 +58,48 @@ lbp_img = lbp_map(before)
 lbp_img = (lbp_img * 255).astype("uint8")
 lbp_img = cv2.merge([lbp_img, lbp_img, lbp_img])
 
+threshed_img = erosion(threshed_img, kernel_size=2)
+
 # Contour analysis and visualization
 contours, _ = cv2.findContours(threshed_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 mask = np.zeros(before.shape, dtype='uint8')
 filled_after = after.copy()
 
+#Find evenly spaced points that lie on the contour
+def get_contour_points(contour, num_points=3):
+    contour = contour.squeeze()
+    M = cv2.moments(contour)
+    if M["m00"] != 0:
+        centroid = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+    else:
+        centroid = np.mean(contour, axis=0).astype(int)
+
+    distances = np.linalg.norm(contour - centroid, axis=1)
+    sorted_indices = np.argsort(distances)
+    num_points = min(num_points, len(contour))
+    selected_indices = sorted_indices[:num_points]
+    return contour[selected_indices]
+
+#function to find centroid of contour
+def get_centroid(contour):
+    M = cv2.moments(contour)
+    if M["m00"] != 0:
+        centroid = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+    else:
+        centroid = np.mean(contour, axis=0).astype(int)
+    return centroid
+
+#function that finds centroid using above, but checks if it is within the contour, if not, finds the nearest pixel that is
+def get_centroid_safe(contour):
+    centroid = get_centroid(contour)
+    if cv2.pointPolygonTest(contour, centroid, False) < 0:
+        contour_points = get_contour_points(contour, num_points=5)
+        distances = np.linalg.norm(contour_points - centroid, axis=1)
+        centroid = contour_points[np.argmin(distances)]
+    return centroid
+
 for c in contours:
-    if cv2.contourArea(c) > 40:
+    if cv2.contourArea(c) > 400:
         x, y, w, h = cv2.boundingRect(c)
         cv2.rectangle(before, (x, y), (x + w, y + h), (36,255,12), 2)
         cv2.rectangle(after, (x, y), (x + w, y + h), (36,255,12), 2)
@@ -75,6 +110,11 @@ for c in contours:
         overlay = lbp_img.copy()
         cv2.drawContours(overlay, [c], 0, (0,0,255), -1)
         cv2.addWeighted(overlay, 0.3, lbp_img, 0.7, 0, lbp_img)
+        point1 = get_centroid_safe(c)
+        cv2.circle(filled_after, tuple(point1), 1, (255, 0, 0), -1)
+        point2 = get_centroid(c)
+        cv2.circle(filled_after, tuple(point2), 1, (0, 0, 255), -1)
+
 
 # Plot images as subplots
 fig, axs = plt.subplots(2, 4, figsize=(15, 8))

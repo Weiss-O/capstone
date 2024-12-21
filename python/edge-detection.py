@@ -34,7 +34,7 @@ def sobel_edge_detection(image):
 
 
 # Read the original image
-img = cv2.imread('test_images/baseline_1.jpg') 
+img = cv2.imread('python/test_set/capture_2.jpg') 
 # Display original image
 cv2.imshow('Original', img)
 cv2.waitKey(0)
@@ -65,7 +65,7 @@ _, threshed_img_denoised = cv2.threshold(denoised_sobelMag_fastNl, 0, 255, cv2.T
 cv2.imshow('Thresholded Denoised Sobel Magnitude', threshed_img_denoised)
 cv2.waitKey(0)
 
-diff_img = cv2.imread(r'output\Unfiltered diff\mask.jpg')
+diff_img = cv2.imread(r'python\output\2024-11-13_20-19-16\threshed.jpg')
 
 if len(diff_img.shape) == 2:
     diff_img = cv2.cvtColor(diff_img, cv2.COLOR_GRAY2BGR)

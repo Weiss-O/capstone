@@ -164,4 +164,7 @@ cython_debug/
 python/output/
 python/KNN_testing
 python/KNN_training
+output/
+
+.gitignore
 
