@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import python.OPO as OPO
 import ProposalGenerator as PG
 import SegmentationFilter as SF
+import cv2
 
 class Detector(ABC):
     @abstractmethod
@@ -16,9 +17,14 @@ class Detector(ABC):
 class BasicDetector(Detector):
     def __init__(self, baseline, proposalGenerator=None, segmentationFilter=None):
         self.baseline = baseline
-        if proposalGenerator is None:
-            self.proposalGenerator = PG.SSIMProposalGenerator()
-        if segmentationFilter is None:
+        self.segmentationFilter = segmentationFilter
+        self.proposalGenerator = proposalGenerator
+
+        if self.proposalGenerator is None:
+            self.proposalGenerator = PG.SSIMProposalGenerator(
+                baseline=self.baseline
+            )
+        if self.segmentationFilter is None:
             self.segmentationFilter = SF.IOUSegmentationFilter()
 
     #Function to take in image and generate list of objects
@@ -27,7 +33,8 @@ class BasicDetector(Detector):
         return self.segmentationfilter.filter(imageObj, self.baseline, proposals)
     
 if __name__ == "__main__":
-    baseline = r"test_set/capture_2.jpg:"
-    image = r"test_set/capture_10.jpg"
+    baseline_path = r"test_set/capture_2.jpg:"
+    image_path = r"test_set/capture_10.jpg"
 
-    detector = BasicDetector(baseline)
+    detector = BasicDetector(cv2.imread(baseline_path))
+    detections = detector.detect(cv2.imread(image_path))
