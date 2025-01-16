@@ -77,7 +77,7 @@ if __name__ == "__main__":
     ax3d.plot([0, 0], [-1000, 1000], [0, 0], 'k--', alpha=0.5)  # Y-axis
     ax3d.plot([0, 0], [0, 0], [-1000, 1000], 'k--', alpha=0.5)  # Z-axis
 
-    # Example of setting axis limits
+    # Setting axis limits
     ax3d.set_xlim([-1000, 1000])
     ax3d.set_ylim([-1000, 1000])
     ax3d.set_zlim([-1000, 1000])
@@ -91,6 +91,10 @@ if __name__ == "__main__":
     ax2d.set_xlabel('X')
     ax2d.set_ylabel('Y')
     
+    #Set titles
+    ax3d.set_title('3D Representation of Camera FOV')
+    ax2d.set_title('2D Representation of Camera FOV')
+
     # Define the four corners of the image frame in the camera image frame
     image_corners = np.array([
         [0, 0, 1],  # Bottom-left
@@ -100,14 +104,18 @@ if __name__ == "__main__":
     ])
 
     #project out at a distance of 100mm from the camera in the camera z direction
-    cam_corners = [np.append(camera.image_to_cam(corner, 100), 1) for corner in image_corners]
+    cone_depth = 500
+    cam_corners = [np.append(camera.image_to_cam(corner, cone_depth), 1) for corner in image_corners]
     
     #Transform the corners to the world frame
     transformed_corners = [np.dot(camera.T_cam_world, corner) for corner in cam_corners]
     transformed_camera_origin = np.dot(camera.T_cam_world, np.array([0, 0, 0, 1]))
     
-    #plot line connecting world origin to transformed camera origin
-    ax3d.plot([0, transformed_camera_origin[0]], [0, transformed_camera_origin[1]], [0, transformed_camera_origin[2]], color='r')
+    #Point in the world to represent an object
+    world_obj = np.array([200, 200, -200, 1])
+
+    #Plot the world obj
+    ax3d.scatter(world_obj[0], world_obj[1], world_obj[2], c='r', s=50)
 
     #plot lines connecting the frame
     image_frame, = ax3d.plot(
@@ -124,9 +132,14 @@ if __name__ == "__main__":
         np.array([[transformed_camera_origin[2], corner[2]] for corner in transformed_corners]).flatten(),
         'b-'
     )
+
+    #Camera view of world object
+    cam_obj = np.dot(np.linalg.inv(camera.T_cam_world), world_obj)
+    cam_obj = camera.cam_to_image(cam_obj[:3])
+    photo_rep = ax2d.scatter(cam_obj[0], cam_obj[1], c='r', s=50)
     
     # Plot the vector from the origin to the world point
-    vector, = ax3d.plot([0, transformed_camera_origin[0]], [0, transformed_camera_origin[1]], [0, transformed_camera_origin[2]], 'r-')
+    vector, = ax3d.plot([0, transformed_camera_origin[0]], [0, transformed_camera_origin[1]], [0, transformed_camera_origin[2]], 'g-')
 
     # Create sliders for theta and phi
     ax_theta = plt.axes([0.25, 0.1, 0.65, 0.03], facecolor='lightgoldenrodyellow')
@@ -146,6 +159,10 @@ if __name__ == "__main__":
         transformed_corners = [np.dot(camera.T_cam_world, corner) for corner in cam_corners]
         transformed_camera_origin = np.dot(camera.T_cam_world, np.array([0, 0, 0, 1]))
 
+        #Update the 2D representation of the object
+        cam_obj = np.dot(np.linalg.inv(camera.T_cam_world), world_obj)
+        cam_obj = camera.cam_to_image(cam_obj[:3])
+        
         #Update the 3D plot
         #Vector
         vector.set_data([0, transformed_camera_origin[0]], [0, transformed_camera_origin[1]])
@@ -169,6 +186,9 @@ if __name__ == "__main__":
             np.array([[transformed_camera_origin[2], corner[2]] for corner in transformed_corners]).flatten()
         )
         
+        #Update the 2D plot
+        photo_rep.set_offsets(cam_obj[:2])
+
         fig.canvas.draw_idle()
 
     # Connect sliders to update function
