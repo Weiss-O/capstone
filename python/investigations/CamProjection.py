@@ -46,14 +46,14 @@ class Camera:
 
         dx = self.radial_distance*np.cos(phi_rad)*np.cos(theta_rad)
         dy = self.radial_distance*np.cos(phi_rad)*np.sin(theta_rad)
-        dz = self.radial_distance*np.sin(phi_rad)
+        dz = -self.radial_distance*np.sin(phi_rad)
 
         T_cam_world = np.linalg.inv(np.array([
-            [-np.sin(theta_rad), np.cos(theta_rad), dx, 0],
-            [np.sin(phi_rad) * np.cos(theta_rad), np.sin(phi_rad) * np.sin(theta_rad), np.cos(phi_rad), dy],
-            [np.cos(phi_rad) * np.cos(theta_rad), np.cos(phi_rad) * np.sin(theta_rad), -np.sin(phi_rad), dz],
-            [0, 0, 0, 1]
-        ]))
+        [-np.sin(theta_rad), np.cos(theta_rad), 0, 0],
+        [np.sin(phi_rad) * np.cos(theta_rad), np.sin(phi_rad) * np.sin(theta_rad), np.cos(phi_rad), 0],
+        [np.cos(phi_rad) * np.cos(theta_rad), np.cos(phi_rad) * np.sin(theta_rad), -np.sin(phi_rad), -self.radial_distance],
+        [0, 0, 0, 1]
+    ]))
 
         self.T_cam_world = T_cam_world
 
@@ -93,10 +93,10 @@ if __name__ == "__main__":
     
     # Define the four corners of the image frame in the camera image frame
     image_corners = np.array([
-        [-camera.resX / 2, -camera.resY / 2, 1],  # Bottom-left
-        [camera.resX / 2, -camera.resY / 2, 1],   # Bottom-right
-        [camera.resX / 2, camera.resY / 2, 1],    # Top-right
-        [-camera.resX / 2, camera.resY / 2, 1]    # Top-left
+        [0, 0, 1],  # Bottom-left
+        [camera.resX, 0, 1],   # Bottom-right
+        [camera.resX, camera.resY, 1],    # Top-right
+        [0, camera.resY, 1]    # Top-left
     ])
 
     #project out at a distance of 100mm from the camera in the camera z direction
@@ -105,15 +105,11 @@ if __name__ == "__main__":
     #Transform the corners to the world frame
     transformed_corners = [np.dot(camera.T_cam_world, corner) for corner in cam_corners]
     transformed_camera_origin = np.dot(camera.T_cam_world, np.array([0, 0, 0, 1]))
-    #Plot the corners in 3D
-    for corner in transformed_corners:
-        ax3d.scatter([corner[0]], [corner[1]], [corner[2]], color='b')
-    ax3d.scatter([transformed_camera_origin[0]], [transformed_camera_origin[1]], [transformed_camera_origin[2]], color='b')
-
+    
     #plot line connecting world origin to transformed camera origin
     ax3d.plot([0, transformed_camera_origin[0]], [0, transformed_camera_origin[1]], [0, transformed_camera_origin[2]], color='r')
 
-    #plot lines connecting camera origin to each of the transformed corners
+    #plot lines connecting the frame
     image_frame, = ax3d.plot(
         [corner[0] for corner in transformed_corners] + [transformed_corners[0][0]], 
         [corner[1] for corner in transformed_corners] + [transformed_corners[0][1]],
@@ -121,10 +117,11 @@ if __name__ == "__main__":
         'b-'
     )
 
+    #plot lines connecting camera origin to each of the transformed corners
     image_cone, = ax3d.plot(
-        [[transformed_camera_origin[1]] + [corner[1]] for corner in transformed_corners],
-        [[transformed_camera_origin[0]] + [corner[0]] for corner in transformed_corners],
-        [[transformed_camera_origin[2]] + [corner[2]] for corner in transformed_corners],
+        np.array([[transformed_camera_origin[0], corner[0]] for corner in transformed_corners]).flatten(),
+        np.array([[transformed_camera_origin[1], corner[1]] for corner in transformed_corners]).flatten(),
+        np.array([[transformed_camera_origin[2], corner[2]] for corner in transformed_corners]).flatten(),
         'b-'
     )
     
@@ -138,7 +135,7 @@ if __name__ == "__main__":
     theta = 0
     phi = 0
     slider_theta = Slider(ax_theta, 'Theta', 0, 360, valinit=theta)
-    slider_phi = Slider(ax_phi, 'Phi', 0, 360, valinit=phi)
+    slider_phi = Slider(ax_phi, 'Phi', -20, 90, valinit=phi)
 
     def update(val):
         theta = slider_theta.val
@@ -165,11 +162,11 @@ if __name__ == "__main__":
 
         #image cone
         image_cone.set_data(
-            [[transformed_camera_origin[1]] + [corner[1]] for corner in transformed_corners],
-            [[transformed_camera_origin[0]] + [corner[0]] for corner in transformed_corners]
+            np.array([[transformed_camera_origin[0], corner[0]] for corner in transformed_corners]).flatten(),
+            np.array([[transformed_camera_origin[1], corner[1]] for corner in transformed_corners]).flatten()
         )
-        image_cone.set_3d_data(
-                    [[transformed_camera_origin[2]] + [corner[2]] for corner in transformed_corners]
+        image_cone.set_3d_properties(
+            np.array([[transformed_camera_origin[2], corner[2]] for corner in transformed_corners]).flatten()
         )
         
         fig.canvas.draw_idle()
