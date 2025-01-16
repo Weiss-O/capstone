@@ -49,7 +49,6 @@ world_point = transform_point(camera_point, R)
 
 # Transform the corners to the world frame
 transformed_corners = [transform_point(corner, R) for corner in image_corners]
-double_transformed_corners = [transform_point(corner, R2) for corner in image_corners]
 
 # Create the figure and 3D axis
 fig = plt.figure()
@@ -79,13 +78,6 @@ image_frame, = ax.plot(
     'b-'
 )
 
-second_frame, = ax.plot(
-    [corner[0] for corner in double_transformed_corners] + [double_transformed_corners[0][0]], 
-    [corner[1] for corner in double_transformed_corners] + [double_transformed_corners[0][1]],
-    [corner[2] for corner in double_transformed_corners] + [double_transformed_corners[0][2]],
-    'g-'
-)
-
 # Create sliders for theta and phi
 ax_theta = plt.axes([0.25, 0.1, 0.65, 0.03], facecolor='lightgoldenrodyellow')
 ax_phi = plt.axes([0.25, 0.05, 0.65, 0.03], facecolor='lightgoldenrodyellow')
@@ -95,7 +87,7 @@ slider_phi = Slider(ax_phi, 'Phi', 0, 360, valinit=phi)
 
 # Update function for the sliders
 def update(val):
-    global R, world_point, image_corners
+    global R
     theta = slider_theta.val
     phi = slider_phi.val
     R = compute_rotation_matrix(theta, phi)
@@ -114,17 +106,6 @@ def update(val):
     image_frame.set_3d_properties(
         [corner[2] for corner in transformed_corners] + [transformed_corners[0][2]]
     )
-
-    # Update the second frame corners
-    double_transformed_corners = [transform_point(corner, compute_rotation_matrix(2*theta, phi)) for corner in image_corners]
-    second_frame.set_data(
-        [corner[0] for corner in double_transformed_corners] + [double_transformed_corners[0][0]],  # Close the loop
-        [corner[1] for corner in double_transformed_corners] + [double_transformed_corners[0][1]]
-    )
-    second_frame.set_3d_properties(
-        [corner[2] for corner in double_transformed_corners] + [double_transformed_corners[0][2]]
-    )
-
     fig.canvas.draw_idle()
 
 # Connect sliders to update function
