@@ -49,8 +49,8 @@ class Camera:
         dz = -self.radial_distance*np.sin(phi_rad)
 
         T_cam_world = np.linalg.inv(np.array([
-        [-np.sin(theta_rad), np.cos(theta_rad), 0, 0],
-        [np.sin(phi_rad) * np.cos(theta_rad), np.sin(phi_rad) * np.sin(theta_rad), np.cos(phi_rad), 0],
+        [np.sin(theta_rad), -np.cos(theta_rad), 0, 0],
+        [-np.sin(phi_rad) * np.cos(theta_rad), -np.sin(phi_rad) * np.sin(theta_rad), -np.cos(phi_rad), 0],
         [np.cos(phi_rad) * np.cos(theta_rad), np.cos(phi_rad) * np.sin(theta_rad), -np.sin(phi_rad), -self.radial_distance],
         [0, 0, 0, 1]
     ]))
@@ -87,7 +87,7 @@ if __name__ == "__main__":
 
 
     ax2d.set_xlim([0, camera.resX])
-    ax2d.set_ylim([0, camera.resY])
+    ax2d.set_ylim([-camera.resY, 0])
     ax2d.set_xlabel('X')
     ax2d.set_ylabel('Y')
     
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     #Camera view of world object
     cam_obj = np.dot(np.linalg.inv(camera.T_cam_world), world_obj)
     cam_obj = camera.cam_to_image(cam_obj[:3])
-    photo_rep = ax2d.scatter(cam_obj[0], cam_obj[1], c='r', s=50)
+    photo_rep = ax2d.scatter(cam_obj[0], -cam_obj[1], c='r', s=50)
     
     # Plot the vector from the origin to the world point
     vector, = ax3d.plot([0, transformed_camera_origin[0]], [0, transformed_camera_origin[1]], [0, transformed_camera_origin[2]], 'g-')
@@ -187,7 +187,7 @@ if __name__ == "__main__":
         )
         
         #Update the 2D plot
-        photo_rep.set_offsets(cam_obj[:2])
+        photo_rep.set_offsets([cam_obj[0], -cam_obj[1]])
 
         fig.canvas.draw_idle()
 
