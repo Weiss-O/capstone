@@ -1,5 +1,11 @@
 import numpy as np
 
+def ft_to_mm(ft):
+    return ft*304.8
+
+room_width = ft_to_mm(15)
+room_height = ft_to_mm(10)
+
 class Camera:
     def __init__(self, focal_length, resX, resY, radial_distance, pixel_size):
         self.focal_length = focal_length #Focal Length in mm
@@ -49,14 +55,25 @@ class Camera:
         dz = -self.radial_distance*np.sin(phi_rad)
 
         T_cam_world = np.linalg.inv(np.array([
-        [np.sin(theta_rad), -np.cos(theta_rad), 0, 0],
-        [-np.sin(phi_rad) * np.cos(theta_rad), -np.sin(phi_rad) * np.sin(theta_rad), -np.cos(phi_rad), 0],
-        [np.cos(phi_rad) * np.cos(theta_rad), np.cos(phi_rad) * np.sin(theta_rad), -np.sin(phi_rad), -self.radial_distance],
-        [0, 0, 0, 1]
-    ]))
+            [np.sin(theta_rad), -np.cos(theta_rad), 0, 0],
+            [-np.sin(phi_rad) * np.cos(theta_rad), -np.sin(phi_rad) * np.sin(theta_rad), -np.cos(phi_rad), 0],
+            [np.cos(phi_rad) * np.cos(theta_rad), np.cos(phi_rad) * np.sin(theta_rad), -np.sin(phi_rad), -self.radial_distance],
+            [0, 0, 0, 1]
+        ]))
 
         self.T_cam_world = T_cam_world
+    
+    def estimate_theta_phi_abs(self, point, assumed_dist=ft_to_mm(14.25)):
+        #Project the point out the distance
+        cam_point = np.append(self.image_to_cam(point, assumed_dist - self.radial_distance), 1)
+        #Project the point out to the world frame
+        world_point = np.dot(self.T_cam_world, cam_point)
+        #Calculate the angles
+        phi = np.arcsin(-world_point[2]/np.linalg.norm(world_point[:3]))
+        theta = np.arctan2(world_point[1], world_point[0])
 
+        return theta, phi
+    
 if __name__ == "__main__":
     #Create a camera object
     camera = Camera(4.74, 4608, 2592, 50, 1.4e-3)
@@ -78,9 +95,9 @@ if __name__ == "__main__":
     ax3d.plot([0, 0], [0, 0], [-1000, 1000], 'k--', alpha=0.5)  # Z-axis
 
     # Setting axis limits
-    ax3d.set_xlim([-1000, 1000])
-    ax3d.set_ylim([-1000, 1000])
-    ax3d.set_zlim([-1000, 1000])
+    ax3d.set_xlim([0, room_width])
+    ax3d.set_ylim([0, room_width])
+    ax3d.set_zlim([-room_height, 0])
     ax3d.set_xlabel('X')
     ax3d.set_ylabel('Y')
     ax3d.set_zlabel('Z')
@@ -112,10 +129,20 @@ if __name__ == "__main__":
     transformed_camera_origin = np.dot(camera.T_cam_world, np.array([0, 0, 0, 1]))
     
     #Point in the world to represent an object
-    world_obj = np.array([200, 200, -200, 1])
+    w = ft_to_mm(1)
+
+    world_objs = [[room_width, (room_width-w)/2, -room_height, 1], 
+                [room_width,(room_width+w)/2, -room_height, 1],
+                [room_width-w, (room_width-w)/2, -room_height, 1],
+                [room_width-w,(room_width+w)/2, -room_height, 1],
+                [room_width, (room_width-w)/2, -room_height + w, 1],
+                [room_width,(room_width+w)/2, -room_height + w, 1],
+                [room_width-w, (room_width-w)/2, -room_height + w, 1],
+                [room_width-w,(room_width+w)/2, -room_height + w, 1]]
 
     #Plot the world obj
-    ax3d.scatter(world_obj[0], world_obj[1], world_obj[2], c='r', s=50)
+    for world_obj in world_objs:
+        ax3d.scatter(world_obj[0], world_obj[1], world_obj[2], c='r', s=50)
 
     #plot lines connecting the frame
     image_frame, = ax3d.plot(
@@ -124,6 +151,9 @@ if __name__ == "__main__":
         [corner[2] for corner in transformed_corners] + [transformed_corners[0][2]],
         'b-'
     )
+    
+    # Plot the vector from the origin to the world point
+    vector, = ax3d.plot([0, transformed_camera_origin[0]], [0, transformed_camera_origin[1]], [0, transformed_camera_origin[2]], 'g-')
 
     #plot lines connecting camera origin to each of the transformed corners
     image_cone, = ax3d.plot(
@@ -134,12 +164,28 @@ if __name__ == "__main__":
     )
 
     #Camera view of world object
-    cam_obj = np.dot(np.linalg.inv(camera.T_cam_world), world_obj)
-    cam_obj = camera.cam_to_image(cam_obj[:3])
-    photo_rep = ax2d.scatter(cam_obj[0], -cam_obj[1], c='r', s=50)
+    cam_objs = np.array([np.dot(np.linalg.inv(camera.T_cam_world), world_obj) for world_obj in world_objs])
+    cam_objs = np.array([camera.cam_to_image(cam_obj[:3]) for cam_obj in cam_objs])
+    photo_rep = ax2d.scatter([cam_obj[0] for cam_obj in cam_objs],
+                            [-cam_obj[1] for cam_obj in cam_objs],
+                            c='r',
+                            s=50)
     
-    # Plot the vector from the origin to the world point
-    vector, = ax3d.plot([0, transformed_camera_origin[0]], [0, transformed_camera_origin[1]], [0, transformed_camera_origin[2]], 'g-')
+    #Back Calculate estimated theta and phi
+    spherical_coords = np.array([camera.estimate_theta_phi_abs(cam_obj) for cam_obj in cam_objs if (cam_obj[0] < camera.resX and cam_obj[0] > 0 and cam_obj[1] > 0 and cam_obj[1] < camera.resY)])
+
+    #Project rays out using spherical coordinates
+    rays = np.array([[
+        np.cos(c[0])*np.cos(c[1]),
+        np.sin(c[0])*np.cos(c[1]),
+        -np.sin(c[1])] for c in spherical_coords])*ft_to_mm(25)
+        
+    ray_plotter, = ax3d.plot(
+        np.array([[0, ray[0]] for ray in rays]).flatten(),
+        np.array([[0, ray[1]] for ray in rays]).flatten(),
+        np.array([[0, ray[2]] for ray in rays]).flatten(),
+        'black'
+    ) 
 
     # Create sliders for theta and phi
     ax_theta = plt.axes([0.25, 0.1, 0.65, 0.03], facecolor='lightgoldenrodyellow')
@@ -187,9 +233,29 @@ if __name__ == "__main__":
         )
         
         #Update the 2D plot
-        photo_rep.set_offsets([cam_obj[0], -cam_obj[1]])
+        cam_objs = np.array([np.dot(np.linalg.inv(camera.T_cam_world), world_obj) for world_obj in world_objs])
+        cam_objs = np.array([camera.cam_to_image(cam_obj[:3]) for cam_obj in cam_objs])
+        photo_rep.set_offsets(np.c_[cam_objs[:, 0], -cam_objs[:, 1]])
+
+            #Back Calculate estimated theta and phi
+        spherical_coords = np.array([camera.estimate_theta_phi_abs(cam_obj) for cam_obj in cam_objs if (cam_obj[0] < camera.resX and cam_obj[0] > 0 and cam_obj[1] > 0 and cam_obj[1] < camera.resY)])
+
+        #Project rays out using spherical coordinates
+        rays = np.array([[
+            np.cos(c[0])*np.cos(c[1]),
+            np.sin(c[0])*np.cos(c[1]),
+            -np.sin(c[1])] for c in spherical_coords])*ft_to_mm(25)
+            
+        ray_plotter.set_data(
+            np.array([[0, ray[0]] for ray in rays]).flatten(),
+            np.array([[0, ray[1]] for ray in rays]).flatten()
+        )
+        ray_plotter.set_3d_properties(
+            np.array([[0, ray[2]] for ray in rays]).flatten()
+        )
 
         fig.canvas.draw_idle()
+
 
     # Connect sliders to update function
     slider_theta.on_changed(update)
