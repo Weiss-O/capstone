@@ -6,6 +6,17 @@ def ft_to_mm(ft):
 room_width = ft_to_mm(15)
 room_height = ft_to_mm(10)
 
+def generate_box(center, width, height, depth):
+    return [center[0] - width/2, center[1] - height/2, center[2], 1],\
+        [center[0] + width/2, center[1] - height/2, center[2], 1],\
+        [center[0] + width/2, center[1] + height/2, center[2], 1], \
+        [center[0] - width/2, center[1] + height/2, center[2], 1], \
+        [center[0] - width/2, center[1] - height/2, center[2] + depth, 1], \
+        [center[0] + width/2, center[1] + height/2, center[2] + depth, 1], \
+        [center[0] - width/2, center[1] + height/2, center[2] + depth, 1], \
+        [center[0] + width/2, center[1] - height/2, center[2] + depth, 1], \
+    
+
 class Camera:
     def __init__(self, focal_length, resX, resY, radial_distance, pixel_size):
         self.focal_length = focal_length #Focal Length in mm
@@ -50,10 +61,6 @@ class Camera:
         theta_rad = np.radians(theta)
         phi_rad = np.radians(phi)
 
-        dx = self.radial_distance*np.cos(phi_rad)*np.cos(theta_rad)
-        dy = self.radial_distance*np.cos(phi_rad)*np.sin(theta_rad)
-        dz = -self.radial_distance*np.sin(phi_rad)
-
         T_cam_world = np.linalg.inv(np.array([
             [np.sin(theta_rad), -np.cos(theta_rad), 0, 0],
             [-np.sin(phi_rad) * np.cos(theta_rad), -np.sin(phi_rad) * np.sin(theta_rad), -np.cos(phi_rad), 0],
@@ -76,7 +83,7 @@ class Camera:
     
 if __name__ == "__main__":
     #Create a camera object
-    camera = Camera(4.74, 4608, 2592, 50, 1.4e-3)
+    camera = Camera(4.74, 2592, 4608, 50, 1.4e-3)
     print(camera.FOV)
 
     ##VISUALIZATION CODE##
@@ -131,14 +138,16 @@ if __name__ == "__main__":
     #Point in the world to represent an object
     w = ft_to_mm(1)
 
-    world_objs = [[room_width, (room_width-w)/2, -room_height, 1], 
-                [room_width,(room_width+w)/2, -room_height, 1],
-                [room_width-w, (room_width-w)/2, -room_height, 1],
-                [room_width-w,(room_width+w)/2, -room_height, 1],
-                [room_width, (room_width-w)/2, -room_height + w, 1],
-                [room_width,(room_width+w)/2, -room_height + w, 1],
-                [room_width-w, (room_width-w)/2, -room_height + w, 1],
-                [room_width-w,(room_width+w)/2, -room_height + w, 1]]
+    world_objs = []
+    box_locations = [
+        [room_width - w/2, room_width-w/2, -room_height],
+        [w/2, room_width-w/2, -room_height],
+        [room_width - w/2, w/2, -room_height],
+        [w/2, w/2, -room_height]
+    ]
+    for location in box_locations:
+        for box in generate_box(location, w, w, w):
+            world_objs.append(box)
 
     #Plot the world obj
     for world_obj in world_objs:
