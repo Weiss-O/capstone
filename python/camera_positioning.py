@@ -32,9 +32,6 @@ camera_resolution = [1920, 1080] #resolution of camera in pixels
 #Array to store theta_phi positions of camera
 camera_positions = [[theta0, phi0], [theta1, phi1], [theta2, phi2]]
 
-
-import matplotlib.pyplot as plt
-
 # Function to convert spherical coordinates to cartesian coordinates
 def spherical_to_cartesian(r, theta, phi):
     theta_rad = np.deg2rad(theta)
@@ -85,37 +82,35 @@ for theta, phi in camera_positions:
 # Origin point
 origin = np.array([w_room - wall_distance, w_room - wall_distance, h_room])
 
-# Create a new figure for 3D plotting
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
 
-# Plot rays for each camera position
-for theta, phi in camera_positions:
-    x0, y0, z0 = spherical_to_cartesian(r_camera, theta, phi)
-    x1, y1, z1 = spherical_to_cartesian(10, theta, phi)
-    ax.plot([origin[0] + x0, origin[0] + x1], [origin[1] + y0, origin[1] + y1], [origin[2] + z0, origin[2] + z1], marker = 'o')
+if __name__ == "__main__":
+    
+    import matplotlib.pyplot as plt
 
-# Plot camera FOV for each camera position
-for theta, phi in camera_positions:
-    fov = create_camera_fov(theta, phi, r_camera, camera_fov_width, camera_fov_height)
-    ax.plot([p[0] for p in fov], [p[1] for p in fov], [p[2] for p in fov])
+    # Create a new figure for 3D plotting
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
 
-# Set labels
-ax.set_xlabel('X')
-ax.set_ylabel('Y')
-ax.set_zlabel('Z')
+    # Plot rays for each camera position
+    for theta, phi in camera_positions:
+        x0, y0, z0 = spherical_to_cartesian(r_camera, theta, phi)
+        x1, y1, z1 = spherical_to_cartesian(10, theta, phi)
+        ax.plot([origin[0] + x0, origin[0] + x1], [origin[1] + y0, origin[1] + y1], [origin[2] + z0, origin[2] + z1], marker = 'o')
 
-#set axis limits to 15 ft x 15 ft x 10 ft
-ax.set_xlim([0, w_room])
-ax.set_ylim([0, w_room])
-ax.set_zlim([0, h_room])
+    # Plot camera FOV for each camera position
+    for theta, phi in camera_positions:
+        fov = create_camera_fov(theta, phi, r_camera, camera_fov_width, camera_fov_height)
+        ax.plot([p[0] for p in fov], [p[1] for p in fov], [p[2] for p in fov])
 
-# Show plot
-plt.show()
+    # Set labels
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
 
-"""
-class Camera_Position:
-    def __init__(self, theta: float, phi: float):
-        self.theta = theta
-        self.phi = phi
-"""
+    #set axis limits to 15 ft x 15 ft x 10 ft
+    ax.set_xlim([0, w_room])
+    ax.set_ylim([0, w_room])
+    ax.set_zlim([0, h_room])
+
+    # Show plot
+    plt.show()

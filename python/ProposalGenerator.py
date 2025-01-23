@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import cv2
-import ProposalPreprocessor
+import ProposalPreprocessor as PP
 import numpy as np
 from skimage.metrics import structural_similarity
 import ContourAnalysis as CA
@@ -17,9 +17,9 @@ class ProposalGenerator(ABC):
 
 #Basic Proposal Generator Class Using SSIM
 class SSIMProposalGenerator(ProposalGenerator):
-    def __init__(self, preprocessor:ProposalPreprocessor.ProposalPreprocessor=None, baseline=None):
-        self.preprocessor = preprocessor if preprocessor != None else ProposalPreprocessor.NullPreprocessor()
-        self.baseline = baseline if baseline != None else cv2.imread("baseline.jpg")
+    def __init__(self, baseline, preprocessor:PP.ProposalPreprocessor=None):
+        self.preprocessor = preprocessor if preprocessor != None else PP.GrayscaleGaussianPreprocessor()
+        self.baseline = baseline
 
         self.baseline_preprocessed = self.preprocess(self.baseline)
 
@@ -57,8 +57,8 @@ class SSIMProposalGenerator(ProposalGenerator):
         return proposals
 
 if __name__ == "__main__":
-    pGen = SSIMProposalGenerator(
-        ProposalPreprocessor.GrayscaleGaussianPreprocessor()
+    pGen = SSIMProposalGenerator(baseline = cv2.imread("test_set/capture_2.jpg"),
+        preprocessor=PP.GrayscaleGaussianPreprocessor()
     )
 
-    processed_image = pGen.preprocess(cv2.imread("test_images.jpg"))
+    processed_image = pGen.preprocess(cv2.imread("test_set/capture_10.jpg"))

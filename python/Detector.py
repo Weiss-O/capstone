@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-import python.OPO as OPO
+import OPO as OPO
 import ProposalGenerator as PG
 import SegmentationFilter as SF
 import cv2
@@ -15,26 +15,26 @@ class Detector(ABC):
 #   Image and baseline are passed to proposalGen and segFilter
 #       Unsure whether proposalGen and SegFilter should be classes or class instances
 class BasicDetector(Detector):
-    def __init__(self, baseline, proposalGenerator=None, segmentationFilter=None):
+    def __init__(self, baseline, proposal_generator:PG.ProposalGenerator=None, segmentation_filter:SF.SegmentationFilter=None):
         self.baseline = baseline
-        self.segmentationFilter = segmentationFilter
-        self.proposalGenerator = proposalGenerator
+        self.segmentation_filter = segmentation_filter
+        self.proposal_generator = proposal_generator
 
-        if self.proposalGenerator is None:
-            self.proposalGenerator = PG.SSIMProposalGenerator(
+        if self.proposal_generator is None:
+            self.proposal_generator = PG.SSIMProposalGenerator(
                 baseline=self.baseline
             )
-        if self.segmentationFilter is None:
-            self.segmentationFilter = SF.IOUSegmentationFilter()
+        if self.segmentation_filter is None:
+            self.segmentation_filter = SF.IOUSegmentationFilter()
 
     #Function to take in image and generate list of objects
     def detect(self, imageObj) -> list:
-        proposals = self.proposalGenerator.generateProposals(imageObj, self.baseline)
-        return self.segmentationfilter.filter(imageObj, self.baseline, proposals)
+        proposals = self.proposal_generator.generateProposals(imageObj)
+        return self.segmentation_filter.filter(imageObj, self.baseline, proposals)
     
 if __name__ == "__main__":
-    baseline_path = r"test_set/capture_2.jpg:"
+    baseline_path = r"test_set/capture_2.jpg"
     image_path = r"test_set/capture_10.jpg"
 
-    detector = BasicDetector(cv2.imread(baseline_path))
+    detector = BasicDetector(baseline=cv2.imread(baseline_path))
     detections = detector.detect(cv2.imread(image_path))

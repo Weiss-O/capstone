@@ -1,3 +1,11 @@
+""""
+File was written to help visualize and verify the math being used for camera projection
+    * The code includes functionality for:
+        * Creating a camera object with a given focal length, resolution, pixel size, radial distance from positioning centre
+        * Projecting a point from the camera frame to the image frame and vice versa
+        * Transforming from camera frame to world frame and vice versa
+    * Math in this code is validated, and supports the method for estimating projection commands
+"""
 import numpy as np
 
 def ft_to_mm(ft):

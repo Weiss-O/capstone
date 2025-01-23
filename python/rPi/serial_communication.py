@@ -1,3 +1,5 @@
+#Demo code to test communication between raspberry pi and arduino
+
 import serial
 
 if __name__ == "__main__":
