@@ -5,7 +5,7 @@ HOST = '0.0.0.0'  # Listen on all interfaces
 PORT = 5000
 output_dir = "output"
 os.makedirs(output_dir, exist_ok=True)
-output_path = os.path.join(output_dir, "received_image.jpg")
+output_path = os.path.join(output_dir, "test.jpg")
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
     server.bind((HOST, PORT))

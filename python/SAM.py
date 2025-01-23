@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from skimage.metrics import structural_similarity
 import cv2
+import sys
 
 
 device = torch.device("cuda")
@@ -67,7 +68,7 @@ def show_masks(image, masks, scores, point_coords=None, box_coords=None, input_l
         plt.axis('off')
         plt.show()
 
-image = Image.open(r"test_images/3_obj_darker.jpg")
+image = Image.open(r"python/test_images/3_obj_darker.jpg")
 image = np.array(image.convert("RGB"))
 
 plt.figure(figsize=(10,10))
@@ -76,11 +77,13 @@ plt.axis('on')
 plt.show()
 
 ##Loading the SAM2 model and predictor
+sys.path.append(os.path.expanduser("~/sam2"))
 from sam2.build_sam import build_sam2
 from sam2.sam2_image_predictor import SAM2ImagePredictor
+import sys
 
-sam2_checkpoint = "checkpoints/sam2.1_hiera_large.pt"
-model_cfg = "configs/sam2.1/sam2.1_hiera_l.yaml"
+sam2_checkpoint = "~/sam2/checkpoints/sam2.1_hiera_large.pt"
+model_cfg = "~/sam2/configs/sam2.1/sam2.1_hiera_l.yaml"
 
 sam2_model = build_sam2(model_cfg, sam2_checkpoint, device=device)
 
@@ -155,8 +158,8 @@ show_masks(image, masks, scores, point_coords=input_point, input_labels=input_la
 
 #Trying out SSIM > SAM pipeline
 
-baseline_path = "test_set/capture_2.jpg"
-test_path = "test_set/capture_41.jpg"
+baseline_path = "output/baseline.jpg"
+test_path = "output/test.jpg"
 
 baseline_sam = Image.open(baseline_path)
 test_sam = Image.open(test_path)

@@ -11,7 +11,7 @@ camera_config = picam2.create_still_configuration(main={"size": (4608 , 2592)}) 
 picam2.configure(camera_config)
 
 # Set the manual focus mode
-picam2.set_controls({"AfMode": controls.AfModeEnum.Manual, "LensPosition": 0.23})  # Adjust LensPosition as needed
+picam2.set_controls({"AfMode": controls.AfModeEnum.Manual, "LensPosition": 0})  # Adjust LensPosition as needed
 picam2.start(show_preview=False)
 
 # Allow the camera to settle
