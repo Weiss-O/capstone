@@ -1,48 +1,30 @@
-String command
+#include <SoftwareSerial.h>
 
-#define sensorPin A0
-#define blueLed 8
-#define whiteLed 9
-#define redLed 10
+const int timeout = 5000; // 5 seconds timeout
+const char *message = "Hello from Arduino!"; // Message to send to the Raspberry Pi
+SoftwareSerial mySerial(0, 1); // RX, TX
 
-void Setup() {
-  Serial.begin(9600);
-  pinMode(blueLed, OUTPUT);
-  pinMode(whiteLed, OUTPUT);
-  pinMode(redLed, OUTPUT);
+void setup() {
+  Serial.begin(9600); // Serial communication for the laptop monitor
+  mySerial.begin(9600); // Serial communication for the software UART
+  Serial.println("Sending message to Raspberry Pi...");
+  mySerial.println(message); // Send the message to the Raspberry Pi
+
+  unsigned long startTime = millis(); // Record the start time
+
+  while (millis() - startTime < timeout) {
+    if (mySerial.available() > 0) { // Check if a response is received
+      String response = mySerial.readString(); // Read the response
+      Serial.print("Received response from Raspberry Pi: ");
+      Serial.println(response);
+      delay(1000); // Wait 1 second before sending the next message
+      return; // Exit the loop after receiving a response
+    }
+  }
+
+  Serial.println("No response received, retrying...");
+  delay(1000); // Wait 1 second before retrying
 }
 
-void loop(){
-    int reading = analogRead(sensorPin);
-    float voltage = reading * 5.0;
-    voltage /= 1024.0;
-    float temperatureC = (voltage - 0.5) * 100;
-    float temperatureF = (temperatureC * 9.0 / 5.0) + 32.0;
-
-    Serial.println(temperatureF);
-    if (Serial.available()) {
-        command = Serial.readSringUntil('\n');
-        command.trim();
-        if (command == "blue") {
-            digitalWrite(blueLed, HIGH);
-            digitalWrite(whiteLed, LOW);
-            digitalWrite(redLed, LOW);
-        } else if (command == "white") {
-            digitalWrite(blueLed, LOW);
-            digitalWrite(whiteLed, HIGH);
-            digitalWrite(redLed, LOW);
-        } else if (command == "red") {
-            digitalWrite(blueLed, LOW);
-            digitalWrite(whiteLed, LOW);
-            digitalWrite(redLed, HIGH);
-        } else if (command == "off") {
-            digitalWrite(blueLed, LOW);
-            digitalWrite(whiteLed, LOW);
-            digitalWrite(redLed, LOW);
-        } else {digitalWrite(blueLed, HIGH);
-            digitalWrite(whiteLed, HIGH);
-            digitalWrite(redLed, HIGH); 
-        }
-    }
-    delay(1000);
+int main(){
 }
