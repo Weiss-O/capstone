@@ -10,10 +10,9 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from skimage.metrics import structural_similarity
 import cv2
-import sys
-
 
 device = torch.device("cuda")
+root_dir = os.path.dirname(os.path.abspath(__file__)) + "/"
 
 if device.type == "cuda":
         #use bfloat16
@@ -68,7 +67,8 @@ def show_masks(image, masks, scores, point_coords=None, box_coords=None, input_l
         plt.axis('off')
         plt.show()
 
-image = Image.open(r"python/test_images/3_obj_darker.jpg")
+image_path = os.path.join(root_dir, "test_images/3_obj_darker.jpg")
+image = Image.open(image_path)
 image = np.array(image.convert("RGB"))
 
 plt.figure(figsize=(10,10))
@@ -77,15 +77,18 @@ plt.axis('on')
 plt.show()
 
 ##Loading the SAM2 model and predictor
-sys.path.append(os.path.expanduser("~/sam2"))
-from sam2.build_sam import build_sam2
-from sam2.sam2_image_predictor import SAM2ImagePredictor
 import sys
 
-sam2_checkpoint = "~/sam2/checkpoints/sam2.1_hiera_large.pt"
-model_cfg = "~/sam2/configs/sam2.1/sam2.1_hiera_l.yaml"
+from sam2.build_sam import build_sam2
+from sam2.sam2_image_predictor import SAM2ImagePredictor
+
+sam_path = os.path.expanduser("~/sam2")
+# Load Sam checkpoint "~/sam2/checkpoints/sam2.1_hiera_large.pt"
+sam2_checkpoint = os.path.join(sam_path, "checkpoints/sam2.1_hiera_large.pt")
+model_cfg = "configs/sam2.1/sam2.1_hiera_l.yaml"
 
 sam2_model = build_sam2(model_cfg, sam2_checkpoint, device=device)
+
 
 predictor = SAM2ImagePredictor(sam2_model)
 

@@ -50,8 +50,13 @@ class SSIMProposalGenerator(ProposalGenerator):
         proposals = []
 
         for contour in contours:
+            #Find point on detection area closest to centroid
             point = np.array([CA.get_centroid_safe(contour)])
+            
+            #Create proposal object
             proposal = Proposal(contour, point)
+
+            #Append proposal to list
             proposals.append(proposal)
         
         return proposals
