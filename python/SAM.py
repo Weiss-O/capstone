@@ -2,7 +2,6 @@
 # Code is from the SAM2 example jupyter notebooks
 
 #Necessary imports and helper functions for displaying points, boxes and masks
-
 import os
 import numpy as np
 import torch
