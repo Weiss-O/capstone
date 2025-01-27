@@ -50,7 +50,7 @@ class Camera:
     #Change from 3D point in camera reference frame to 2D point in image reference frame
     def cam_to_image(self, point):
         return np.dot(self.T_cam_photo, point[:3]/point[2])
-    
+
     def image_to_cam(self, point, distance):
         return np.dot(np.linalg.inv(self.T_cam_photo), point)*distance
     
@@ -144,7 +144,7 @@ if __name__ == "__main__":
     transformed_camera_origin = np.dot(camera.T_cam_world, np.array([0, 0, 0, 1]))
     
     #Point in the world to represent an object
-    w = ft_to_mm(1)
+    w = ft_to_mm(5)
 
     world_objs = []
     box_locations = [
@@ -154,7 +154,7 @@ if __name__ == "__main__":
         [w/2, w/2, -room_height]
     ]
     for location in box_locations:
-        for box in generate_box(location, w, w, w):
+        for box in generate_box(location, w, w, w/3):
             world_objs.append(box)
 
     #Plot the world obj

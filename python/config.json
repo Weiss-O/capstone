@@ -1,0 +1,12 @@
+{
+    "BaselineImages": [
+        {
+            "name": "baseline1",
+            "path": "baseline1.png",
+            "coordinates": {
+                "theta": 0,
+                "phi": 0
+            }
+        }
+    ]
+}
