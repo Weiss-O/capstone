@@ -17,8 +17,8 @@ class Controller():
     def point_camera(self, theta, phi):
         theta_cam = theta - self.settings["camera_offset"]["theta"]
         phi_cam = phi - self.settings["camera_offset"]["phi"]
-        theta_steps = degrees_to_steps(theta_cam, self.settings["steps_per_revolution"]["theta"])
-        phi_steps = degrees_to_steps(phi_cam, self.settings["steps_per_revolution"]["phi"])
+        theta_steps = degrees_to_steps(theta_cam, self.settings["steps_per_revolution"])
+        phi_steps = degrees_to_steps(phi_cam, self.settings["steps_per_revolution"])
         theta_actual = steps_to_degrees(theta_steps, self.settings["steps_per_revolution"]["theta"]) + self.settings["camera_offset"]["theta"]
         phi_actual = steps_to_degrees(phi_steps, self.settings["steps_per_revolution"]["phi"]) + self.settings["camera_offset"]["phi"]
         
