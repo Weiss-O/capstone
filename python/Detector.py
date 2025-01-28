@@ -5,6 +5,8 @@ import SegmentationFilter as SF
 import cv2
 import numpy as np
 
+import config
+
 class Detector(ABC):
     @abstractmethod
     def detect(self, imageObj) -> list:
@@ -39,8 +41,8 @@ if __name__ == "__main__":
     import os
     root_dir = os.path.dirname(os.path.abspath(__file__))+ "/"
 
-    baseline = cv2.imread(os.path.join(root_dir, "test_set/capture_2.jpg"))
-    image = cv2.imread(os.path.join(root_dir, "test_set/capture_17.jpg"))
+    baseline = cv2.imread(os.path.join(root_dir, "test_images/fr_baseline.jpg"))
+    image = cv2.imread(os.path.join(root_dir, "test_images/fr_test.jpg"))
 
 
 

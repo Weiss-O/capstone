@@ -7,14 +7,13 @@ import socket
 import os
 from abc import ABC, abstractmethod
 from enum import Enum
-from ConfigManager import ConfigManager
+import json
 
-#Load and check config file
-#Check if configuration file exists
-config_manager = ConfigManager() #TODO: Implement this class 
-config = config_manager.load_config()
-if config is None:
-    config = config_manager.create_config()
+
+#Load Configuration File
+import config
+
+from Detector import BasicDetector
 
 #Enumeration class for the device states
 class DeviceState(Enum):
@@ -27,7 +26,6 @@ class State(ABC):
     def handle(self):
         pass
 
-
 #State for when the user is not in the room
 class Vacant(State):
     def handle(self):
@@ -35,7 +33,7 @@ class Vacant(State):
         if PERSON_DETECTED:
             return DeviceState.OCCUPIED
         else:
-            idle(config.idle_time_vacant)
+            idle(config["idle_time_vacant"])
             return DeviceState.VACANT
 
 #State for when the user is in the room
@@ -45,12 +43,12 @@ class Occupied(State):
                 point()
         PERSON_DETECTED, imageArray = scan()
         if PERSON_DETECTED:
-            idle(config.idle_time_occupied)
+            idle(config["idle_time_occupied"])
             return DeviceState.OCCUPIED
         else:
             detectedObjects = []
             for image in imageArray:
-                detections = detectObjects(image):
+                detections = detectObjects(image)
                 detectedObjects.append(detections)
             #TODO: Store detected objects in device memory
             
@@ -74,14 +72,10 @@ def point():
 
 #Main function
 
-if __name__ == "__main__":
-    """
-    There are three states:
-        1) VACANT
-        2) OCCUPIED
-    """
-    
-    #Initialize important class instances
+if __name__ == "__main__":    
+    # -----------------------------------
+    # Initialize important class instances
+    # -----------------------------------
 
     #Initialize the camera
     camera = Camera(config.camera_settings) #TODO: Implement this class

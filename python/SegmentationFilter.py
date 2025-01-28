@@ -104,11 +104,15 @@ class IOUSegmentationFilter(SegmentationFilter):
 
         print("# Filtered Proposals: ", len(filtered_proposals))
         return filtered_proposals
-    
+
+
+# -------------------------------------
+# Class to substitute for segmentation filter when processing is done server-side
+# -------------------------------------
 class remoteSegmentationFilter(SegmentationFilter):
-    def __init__(self, server, POSID):
-        self.server = server
-        self.POSID = POSID
+    def __init__(self, server_adapter):
+        self.server = server_adapter
 
     def filter(self, image, proposals) -> list:
-        pass
+        
+        return self.server.process(image, proposals)
