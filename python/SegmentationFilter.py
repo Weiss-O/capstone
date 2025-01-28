@@ -5,39 +5,76 @@ import numpy as np
 import torch
 import os
 
+# ----------------------------------
+# 1. Create Model Predictor Interface
+# ----------------------------------
+class Predictor(ABC):
+    @abstractmethod
+    def set_image(self, image): pass
+    
+    @abstractmethod
+    def predict(self, point_coords, point_labels, multimask_output): pass
+
+# ----------------------------------
+# 2. Implement SAM2 Predictor Adapter
+# ----------------------------------
+class SAM2Predictor(Predictor):
+    def __init__(self, model):
+        self.predictor = PredictorFactory.create_sam2_predictor(model)
+        
+    def set_image(self, image):
+        self.predictor.set_image(image)
+        
+    def predict(self, **kwargs):
+        return self.predictor.predict(**kwargs)
+    
+# ----------------------------------
+# 3. Create Predictor Factory
+# ----------------------------------
+class PredictorFactory:
+    @staticmethod
+    def create_sam2_predictor(baseline_image):
+        device = torch.device("cuda")
+        if torch.cuda.get_device_properties(0).major >= 8:
+            torch.backends.cuda.matmul.allow_tf32 = True
+            torch.backends.cudnn.allow_tf32 = True
+        
+        # sam_path = os.path.expanduser("~/sam2")
+        
+        # sam2_checkpoint = os.path.join(sam_path, "checkpoints/sam2.1_hiera_large.pt")
+        # model_cfg = "configs/sam2.1/sam2.1_hiera_l.yaml"
+
+        from sam2.build_sam import build_sam2
+        from sam2.sam2_image_predictor import SAM2ImagePredictor
+        model = build_sam2(...) #TODO: Fill in the arguments
+        predictor = SAM2Predictor(model)
+        predictor.set_image(baseline_image)
+        return predictor
+
+# ----------------------------------
+# 4. Segmentation Filter Interface
+# ----------------------------------
+
 class SegmentationFilter(ABC):
     @abstractmethod
     def filter(self, image, proposals) -> list:
         pass
 
-#Basic Segmentation Filter Class Using IOU
+# ----------------------------------
+# 5. Refactored IOU Filter with DI
+# ----------------------------------
 class IOUSegmentationFilter(SegmentationFilter):
-    def __init__(self, baseline, iouThreshold = 0.5):
-        self.iouThreshold = iouThreshold
-        
-
-        device = torch.device("cuda")
-        #use bfloat16
-        torch.autocast("cuda", dtype=torch.bfloat16).__enter__()
-        # Turn on tfloat32 for Ampere GPUs (Lenovo Legion has one)
-        if torch.cuda.get_device_properties(0).major >= 8:
-            torch.backends.cuda.matmul.allow_tf32 = True
-            torch.backends.cudnn.allow_tf32 = True
-        
-        from sam2.build_sam import build_sam2
-        from sam2.sam2_image_predictor import SAM2ImagePredictor
-
-
-        sam_path = os.path.expanduser("~/sam2")
-        
-        sam2_checkpoint = os.path.join(sam_path, "checkpoints/sam2.1_hiera_large.pt")
-        model_cfg = "configs/sam2.1/sam2.1_hiera_l.yaml"
-
-        self.sam2_model = build_sam2(model_cfg, sam2_checkpoint, device=device)
-        self.baseline_predictor = SAM2ImagePredictor(self.sam2_model)
-        self.test_predictor = SAM2ImagePredictor(self.sam2_model)
-
-        self.baseline_predictor.set_image(baseline)
+    def __init__(self,
+                 baseline_predictor: Predictor,
+                 test_predictor: Predictor,
+                 iou_calculator,
+                 merger,
+                 iou_threshold = 0.5):
+        self.baseline_predictor = baseline_predictor
+        self.test_predictor = test_predictor
+        self.iou_calculator = iou_calculator
+        self.merger = merger
+        self.iou_threshold = iou_threshold
 
     def merge_proposals(self, proposals):
         #Loop through proposals and merge if IOU for mnaskAfter is above threshold. Repeat until no more merges occur.
@@ -60,10 +97,16 @@ class IOUSegmentationFilter(SegmentationFilter):
         
 
     def filter(self, image, proposals) -> list:
-        label = np.array([1])
-        filtered_proposals = []
-
         self.test_predictor.set_image(image)
+        
+        processed = [self._process_proposal(p) 
+                    for p in proposals]
+        
+        filtered = self._apply_iou_filter(processed)
+        merged = self.merger.merge(filtered)
+
+        return merged
+        
         for proposal in proposals:
             masksBaseline, scoresBaseline, logitsBaseline = self.baseline_predictor.predict(
                 point_coords=proposal.prompt,
@@ -104,6 +147,22 @@ class IOUSegmentationFilter(SegmentationFilter):
 
         print("# Filtered Proposals: ", len(filtered_proposals))
         return filtered_proposals
+    
+    def _process_proposal(self, proposal):
+        # Extract prediction logic
+        baseline_masks = self.baseline_predictor.predict(...) #TODO: Fill in the arguments
+        test_masks = self.test_predictor.predict(...) #TODO: Fill in the arguments
+        
+        return ProcessedProposal(
+            mask_before=baseline_masks[np.argmax(scores)],
+            mask_after=test_masks[np.argmax(scores)],
+            proposal=proposal
+        )
+    
+    def _apply_iou_filter(self, processed):
+        # Implement threshold logic
+        return [p for p in processed 
+               if self.iou_calculator(p) < self.iou_threshold]
     
 class remoteSegmentationFilter(SegmentationFilter):
     def __init__(self, server, POSID):
