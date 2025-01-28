@@ -2,6 +2,7 @@
 # Code is from the SAM2 example jupyter notebooks
 
 #Necessary imports and helper functions for displaying points, boxes and masks
+
 import os
 import numpy as np
 import torch
@@ -67,16 +68,15 @@ def show_masks(image, masks, scores, point_coords=None, box_coords=None, input_l
         plt.show()
 
 image_path = os.path.join(root_dir, "test_images/3_obj_darker.jpg")
-image = Image.open(image_path)
-image = np.array(image.convert("RGB"))
+image = cv2.imread(image_path)
+image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
 plt.figure(figsize=(10,10))
 plt.imshow(image)
 plt.axis('on')
 plt.show()
 
-##Loading the SAM2 model and predictor
-import sys
+# Load the SAM2 model and predictor
 
 from sam2.build_sam import build_sam2
 from sam2.sam2_image_predictor import SAM2ImagePredictor
@@ -160,8 +160,9 @@ show_masks(image, masks, scores, point_coords=input_point, input_labels=input_la
 
 #Trying out SSIM > SAM pipeline
 
-baseline_path = "output/baseline.jpg"
-test_path = "output/test.jpg"
+baseline_path = os.path.join(root_dir, "test_images/baseline_1.jpg")
+test_path = os.path.join(root_dir, "test_images/3_obj_darker.jpg")
+
 
 baseline_sam = Image.open(baseline_path)
 test_sam = Image.open(test_path)

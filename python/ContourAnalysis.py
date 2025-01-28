@@ -12,9 +12,12 @@ def get_contour_points(contour, num_points = 3):
 def get_centroid(contour):
     M = cv2.moments(contour)
     if M["m00"] != 0:
-        centroid = int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"])
+        centroid = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
     else:
-        centroid = np.mean(contour, axis=0).astype(int)
+        x_sum = sum(point[0][0] for point in contour)
+        y_sum = sum(point[0][1] for point in contour)
+        count = len(contour)
+        centroid = (int(x_sum / count), int(y_sum / count))
     return centroid
 
 #Function to find the centroud of a contour that is guaranteed to be inside the contour
