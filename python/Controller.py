@@ -32,8 +32,8 @@ class Controller():
     def point_projector(self, theta, phi):
         theta_proj = theta - self.settings["projector_offset"]["theta"]
         phi_proj = phi - self.settings["projector_offset"]["phi"]
-        theta_steps = degrees_to_steps(theta_proj, self.settings["steps_per_revolution"]["theta"])
-        phi_steps = degrees_to_steps(phi_proj, self.settings["steps_per_revolution"]["phi"])
+        theta_steps = degrees_to_steps(theta_proj, self.settings["steps_per_revolution"])
+        phi_steps = degrees_to_steps(phi_proj, self.settings["steps_per_revolution"])
         
         try: 
             self.moveAbsolute(theta_steps, phi_steps)
