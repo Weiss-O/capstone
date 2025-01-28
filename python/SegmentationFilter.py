@@ -109,7 +109,7 @@ class IOUSegmentationFilter(SegmentationFilter):
 # -------------------------------------
 # Class to substitute for segmentation filter when processing is done server-side
 # -------------------------------------
-class remoteSegmentationFilter(SegmentationFilter):
+class remoteSegmentationFilter(SegmentationFilter): #TODO: This class will not work in its current state under the Liskov Subquestion Principle
     def __init__(self, server_adapter):
         self.server = server_adapter
 

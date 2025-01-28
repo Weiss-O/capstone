@@ -5,7 +5,7 @@ import SegmentationFilter as SF
 import cv2
 import numpy as np
 
-import config
+# import config
 
 class Detector(ABC):
     @abstractmethod

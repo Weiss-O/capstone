@@ -2,6 +2,12 @@
 # The various lower-level functionalities of the program will be imported as modules.
 # This script will run on the raspberry pi
 
+import yaml
+with open('config.yaml') as file:
+    config = yaml.safe_load(file)
+    print(config)
+
+
 #Import the necessary modules
 import socket
 import os
@@ -9,11 +15,12 @@ from abc import ABC, abstractmethod
 from enum import Enum
 import json
 
-
-#Load Configuration File
-import config
-
+# import config
 from Detector import BasicDetector
+import Camera
+import Controller
+
+
 
 #Enumeration class for the device states
 class DeviceState(Enum):
@@ -55,8 +62,6 @@ class Occupied(State):
 
             idle(config.idle_time_vacant)
             return DeviceState.VACANT
-
-initial_state = DeviceState.OCCUPIED
             
 def checkPointingConditions():
     return False
@@ -71,24 +76,23 @@ def point():
     pass
 
 #Main function
-
 if __name__ == "__main__":    
     # -----------------------------------
     # Initialize important class instances
     # -----------------------------------
 
     #Initialize the camera
-    camera = Camera(config.camera_settings) #TODO: Implement this class
-    #Check that the camera is 
-    if camera.is_connected() == False:
-        print("Camera is not connected")
-        exit()
+    cameraType = Camera.PiCamera if os.environ.get('RPI') == True else Camera.CameraStandIn
+    camera = cameraType(config["camera_settings"])
+    camera.start()
     
     #Initialize the controller
     teensy = Controller(config.controller_settings) #TODO: Implement this class
 
-    if teensy.is_connected() == False:
-        print("Controller is not connected")
+    try:
+        teensy.connect()
+    except Exception as e:
+        print("Controller is not connected: ", e)
         exit()
 
     #Check the server connection
@@ -99,7 +103,7 @@ if __name__ == "__main__":
         print("Server is not connected")
         exit()
     
-    state = initial_state
+    state = config.initial_state
     while(True):
         if state == DeviceState.OCCUPIED:
             state = Occupied.handle()

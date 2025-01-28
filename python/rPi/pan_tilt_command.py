@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 import serial # Import the serial library
 import time
+import glob
 
 if __name__ == '__main__':
-    ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
+    # Search for available ttyACM devices
+    ports = glob.glob('/dev/ttyACM*')
+    if not ports:
+        raise IOError("No ttyACM devices found")
+    ser = serial.Serial(ports[0], 9600, timeout=1)
     ser.reset_input_buffer()
 
     while True:
