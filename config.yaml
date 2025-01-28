@@ -8,7 +8,7 @@ camera_settings:
   DistortionMatrix: [0.0, 0.0, 0.0, 0.0, 0.0]
 controller_settings:
   baudrate: 9600
-  port: "/dev/ttyACM0"
+  port: "/dev/ttyACM1"
   timeout: 1
   steps_per_revolution: 200
   camera_offset:

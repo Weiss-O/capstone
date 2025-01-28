@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 import serial
 import numpy as np
+import glob
 
 class Controller():
     def __init__(self, controller_settings):
         self.settings = controller_settings
-        self.ser = serial.Serial(self.settings["port"], self.settings["baudrate"], self.settings["timeout"])
+        ports = glob.glob('/dev/ttyACM*')
+        if not ports:
+            raise IOError("No ttyACM devices found")
+        self.port = ports[0]
+        self.ser = serial.Serial(self.port, self.settings["baudrate"], timeout = self.settings["timeout"])
         self.ser.reset_input_buffer()
         self.is_open = self.ser.is_open
     #Expexts an input in degreees
@@ -91,8 +96,6 @@ class Controller():
         #Check if positionining was successful
         if response != "SUCCESS":
             return Exception(f"Homing Error")
-        
-    def close(self):
         
 
 class CommandGenerator():
