@@ -13,14 +13,15 @@ class Controller():
         self.ser = serial.Serial(self.port, self.settings["baudrate"], timeout = self.settings["timeout"])
         self.ser.reset_input_buffer()
         self.is_open = self.ser.is_open
+        
     #Expexts an input in degreees
     def point_camera(self, theta, phi):
         theta_cam = theta - self.settings["camera_offset"]["theta"]
         phi_cam = phi - self.settings["camera_offset"]["phi"]
         theta_steps = degrees_to_steps(theta_cam, self.settings["steps_per_revolution"])
         phi_steps = degrees_to_steps(phi_cam, self.settings["steps_per_revolution"])
-        theta_actual = steps_to_degrees(theta_steps, self.settings["steps_per_revolution"]["theta"]) + self.settings["camera_offset"]["theta"]
-        phi_actual = steps_to_degrees(phi_steps, self.settings["steps_per_revolution"]["phi"]) + self.settings["camera_offset"]["phi"]
+        theta_actual = steps_to_degrees(theta_steps, self.settings["steps_per_revolution"]) + self.settings["camera_offset"]["theta"]
+        phi_actual = steps_to_degrees(phi_steps, self.settings["steps_per_revolution"]) + self.settings["camera_offset"]["phi"]
         
         try: 
             self.moveAbsolute(theta_steps, phi_steps)
@@ -128,3 +129,6 @@ if __name__ == "__main__":
 
     controller.point_camera(0, 0)
     controller.point_projector(0, 0)
+
+    #make array of points, theta 0 to 90, phi 0 to 90, in 10 degree increments
+     

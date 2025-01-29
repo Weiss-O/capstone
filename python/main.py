@@ -20,8 +20,6 @@ from Detector import BasicDetector
 import Camera
 import Controller
 
-
-
 #Enumeration class for the device states
 class DeviceState(Enum):
     VACANT = 0

@@ -5,12 +5,12 @@ camera_settings:
   - 2592
   orientation: portrait
   LensPosition: 0.23
-  DistortionMatrix: [0.0, 0.0, 0.0, 0.0, 0.0]
+  distortion_matrix: [0.0, 0.0, 0.0, 0.0, 0.0]
 controller_settings:
   baudrate: 9600
   port: "/dev/ttyACM1"
   timeout: 1
-  steps_per_revolution: 200
+  steps_per_revolution: 2048
   camera_offset:
     radial: 50
     theta: 0
@@ -34,22 +34,22 @@ idle_time_vacant: 5
 idle_time_occupied: 5
 baseline:
   POS1:
-    image: baseline/baseline1.jpg
+    image_path: baseline/baseline1.jpg
     camera_pos:
     - 45
     - 60
   POS2:
-    image: baseline/baseline2.jpg
+    image_path: baseline/baseline2.jpg
     camera_pos:
     - 80
     - 39
   POS3:
-    image: baseline/baseline3.jpg
+    image_path: baseline/baseline3.jpg
     camera_pos:
     - 45
     - 39
   POS4:
-    image: baseline/baseline4.jpg
+    image_path: baseline/baseline4.jpg
     camera_pos:
     - 10
     - 39

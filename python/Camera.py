@@ -32,8 +32,8 @@ class CameraStandIn(Camera):
         self.initialize()
 
     def initialize(self):
-        print(f"Set resolution to {self.camera_settings["resolution"][0]}x{self.camera_settings["resolution"][1]} px")
-        print(f"Set lens position to {self.camera_settings["LensPosition"]}")
+        print(f"Set resolution to {self.camera_settings['resolution'][0]}x{self.camera_settings['resolution'][1]} px")
+        print(f"Set lens position to {self.camera_settings['LensPosition']}")
     
     def start(self):
         print("Camera Stand In Started")
