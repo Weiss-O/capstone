@@ -8,48 +8,139 @@ import os
 # ----------------------------------
 # 1. Create Model Predictor Interface
 # ----------------------------------
-class Predictor(ABC):
+class PredictorInterface(ABC):
     @abstractmethod
     def set_image(self, image): pass
     
     @abstractmethod
-    def predict(self, point_coords, point_labels, multimask_output): pass
+    def predict(self, **kwargs): pass
 
 # ----------------------------------
 # 2. Implement SAM2 Predictor Adapter
 # ----------------------------------
-class SAM2Predictor(Predictor):
-    def __init__(self, model):
-        self.predictor = PredictorFactory.create_sam2_predictor(model)
+class SAM2Predictor(PredictorInterface):
+    def __init__(self):
+        self.predictor = PredictorFactory.create_sam2_predictor(predictor_type="sam2_local")
         
     def set_image(self, image):
         self.predictor.set_image(image)
         
     def predict(self, **kwargs):
         return self.predictor.predict(**kwargs)
-    
+
+# ----------------------------------
+# 2.5 Implement Remote Predictor Interface
+# ----------------------------------
+class RemotePredictor(PredictorInterface):
+    def __init__(self, socket):
+        try:
+            self.socket = socket
+            command = b'INIT_PREDICTOR'
+            self.id = str(id(self)).encode()
+            command_length = len(command).to_bytes(4, 'big')
+            id_length = len(self.id).to_bytes(4, 'big')
+
+            #Send command to remote server to initialize predictor
+            self.socket.sendall(command_length + command)
+
+            if self.get_response() != b'INIT_PREDICTOR_ACK':
+                raise Exception("Failed to initialize predictor")
+            
+            # Send unique predictor ID to server
+            self.socket.sendall(id_length + self.id)
+
+            if self.get_response() != b'ID_ACK':
+                raise Exception("Failed to register predictor ID")
+        except Exception as e:
+            print(f"Failed to initialize remote predictor: {e}")
+
+    def set_image(self, image_path):
+        try:
+            # Prepare message parts
+            command = b'SET_IMAGE'
+            command_length = len(command).to_bytes(4, 'big')
+            id_length = len(self.id).to_bytes(4, 'big')
+            
+            # Send everything with lengths
+            self.socket.sendall(command_length + command)
+            self.socket.sendall(id_length + self.id)
+            
+            # Check size of image
+            image_size = os.path.getsize(image_path)
+            size_bytes = image_size.to_bytes(4, 'big')
+            self.socket.sendall(size_bytes)
+
+            #Stream the file in chunks
+            chunk_size = 8192
+            with open(image_path, 'rb') as f:
+                while True:
+                    chunk = f.read(chunk_size)
+                    if not chunk:
+                        break
+                    self.socket.sendall(chunk)
+            
+            #Check if image was received
+            if self.get_response() != b'SET_IMAGE_ACK':
+                raise Exception("Failed to set image")
+        except Exception as e:
+            print(f"Failed to set image: {e}")
+
+    def predict(self, **kwargs):
+        #Make request to remote server
+        command = b'PREDICT'
+        command_length = len(command).to_bytes(4, 'big')
+        id_length = len(self.id).to_bytes(4, 'big')
+        self.socket.sendall(command_length + command)
+        self.socket.sendall(id_length + self.id)
+        # Convert prompts to bytes
+        prompts = kwargs.get('point_coords', [])
+        prompt_bytes = b''
+        num_prompts = len(prompts)
+        prompt_bytes += num_prompts.to_bytes(4, 'big')
+        
+        for prompt in prompts:
+            x, y = prompt
+            prompt_bytes += int(x).to_bytes(4, 'big')
+            prompt_bytes += int(y).to_bytes(4, 'big')
+            
+        # Send prompts
+        prompt_len = len(prompt_bytes).to_bytes(4, 'big')
+        self.socket.sendall(prompt_len + prompt_bytes)
+        
+        # Get response #TODO: The response will be the masks, scores, and logits
+        response = self.get_response()
+        if response != b'PREDICT_ACK':
+            raise Exception("Failed to get prediction")
+
+    def get_response(self):
+        resp_len = int.from_bytes(self.socket.recv(4), 'big') 
+        response = self.socket.recv(resp_len)
+        return response
 # ----------------------------------
 # 3. Create Predictor Factory
 # ----------------------------------
 class PredictorFactory:
     @staticmethod
-    def create_sam2_predictor(baseline_image):
-        device = torch.device("cuda")
-        if torch.cuda.get_device_properties(0).major >= 8:
-            torch.backends.cuda.matmul.allow_tf32 = True
-            torch.backends.cudnn.allow_tf32 = True
-        
-        # sam_path = os.path.expanduser("~/sam2")
-        
-        # sam2_checkpoint = os.path.join(sam_path, "checkpoints/sam2.1_hiera_large.pt")
-        # model_cfg = "configs/sam2.1/sam2.1_hiera_l.yaml"
+    def create_sam2_predictor(predictor_type, **kwargs):
+        if predictor_type == "sam2_local":
+            #CUDA Setup
+            device = torch.device("cuda")
+            if torch.cuda.get_device_properties(0).major >= 8:
+                torch.backends.cuda.matmul.allow_tf32 = True
+                torch.backends.cudnn.allow_tf32 = True
+            
+            sam_path = os.path.expanduser("~/sam2")
+            
+            sam2_checkpoint = os.path.join(sam_path, "checkpoints/sam2.1_hiera_large.pt")
+            model_cfg = "configs/sam2.1/sam2.1_hiera_l.yaml"
 
-        from sam2.build_sam import build_sam2
-        from sam2.sam2_image_predictor import SAM2ImagePredictor
-        model = build_sam2(...) #TODO: Fill in the arguments
-        predictor = SAM2Predictor(model)
-        predictor.set_image(baseline_image)
-        return predictor
+            from sam2.build_sam import build_sam2
+            from sam2.sam2_image_predictor import SAM2ImagePredictor
+            model = build_sam2(model_cfg, sam2_checkpoint, device) #TODO: Fill in the arguments
+            predictor = SAM2Predictor(model)
+            return predictor
+        elif predictor_type == "sam2_remote":
+            return RemotePredictor(socket=kwargs["socket"])
 
 # ----------------------------------
 # 4. Segmentation Filter Interface
@@ -60,13 +151,14 @@ class SegmentationFilter(ABC):
     def filter(self, image, proposals) -> list:
         pass
 
+"""
 # ----------------------------------
 # 5. Refactored IOU Filter with DI
 # ----------------------------------
 class IOUSegmentationFilter(SegmentationFilter):
     def __init__(self,
-                 baseline_predictor: Predictor,
-                 test_predictor: Predictor,
+                 baseline_predictor: PredictorInterface,
+                 test_predictor: PredictorInterface,
                  iou_calculator,
                  merger,
                  iou_threshold = 0.5):
@@ -163,7 +255,8 @@ class IOUSegmentationFilter(SegmentationFilter):
         # Implement threshold logic
         return [p for p in processed 
                if self.iou_calculator(p) < self.iou_threshold]
-    
+"""
+
 class remoteSegmentationFilter(SegmentationFilter):
     def __init__(self, server, POSID):
         self.server = server
@@ -171,3 +264,15 @@ class remoteSegmentationFilter(SegmentationFilter):
 
     def filter(self, image, proposals) -> list:
         pass
+
+if __name__ == "__main__":
+    # Create a remote predictor
+    import socket
+    import yaml
+    
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f)
+    
+    HOST = config["server"]["host"]
+    PORT = config["server"]["port"]
+    
