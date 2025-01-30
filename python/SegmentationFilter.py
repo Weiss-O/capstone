@@ -273,6 +273,15 @@ if __name__ == "__main__":
     with open("config.yaml", "r") as f:
         config = yaml.safe_load(f)
     
-    HOST = config["server"]["host"]
-    PORT = config["server"]["port"]
+    HOST = config["server_settings"]["HOST"]
+    PORT = config["server_settings"]["PORT"]
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((HOST, PORT))
+
+    remote_predictor = RemotePredictor(socket=s)
+    remote_predictor.set_image("test.jpg")
+    remote_predictor.predict(point_coords=[(10, 10), (20, 20)])
+    s.close()
+    
     
