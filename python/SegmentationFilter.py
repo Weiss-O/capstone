@@ -2,7 +2,11 @@ from abc import ABC, abstractmethod
 import cv2
 import ContourAnalysis as CA
 import numpy as np
+import os
+if os.environ.get('RPI', 'False').lower() == 'false':
+    import torch
 import torch
+
 import os
 
 # ----------------------------------
@@ -137,7 +141,7 @@ class PredictorFactory:
             from sam2.build_sam import build_sam2
             from sam2.sam2_image_predictor import SAM2ImagePredictor
             model = build_sam2(model_cfg, sam2_checkpoint, device) #TODO: Fill in the arguments
-            predictor = SAM2Predictor(model)
+            predictor = SAM2ImagePredictor(model)
             return predictor
         elif predictor_type == "sam2_remote":
             return RemotePredictor(socket=kwargs["socket"])
@@ -283,5 +287,5 @@ if __name__ == "__main__":
     remote_predictor.set_image("test.jpg")
     remote_predictor.predict(point_coords=[(10, 10), (20, 20)])
     s.close()
-    
+
     
