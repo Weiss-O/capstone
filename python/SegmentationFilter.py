@@ -1,13 +1,11 @@
 from abc import ABC, abstractmethod
-import cv2
-import ContourAnalysis as CA
-import numpy as np
 import os
-if os.environ.get('RPI', 'False').lower() == 'false':
-    import torch
-import torch
+if os.getenv("RPI", "False").lower() == "false":
+    import cv2
+    import ContourAnalysis as CA
+    import numpy as np
+    print("On Computer")
 
-import os
 
 # ----------------------------------
 # 1. Create Model Predictor Interface
@@ -128,6 +126,7 @@ class PredictorFactory:
     def create_sam2_predictor(predictor_type, **kwargs):
         if predictor_type == "sam2_local":
             #CUDA Setup
+            import torch
             device = torch.device("cuda")
             if torch.cuda.get_device_properties(0).major >= 8:
                 torch.backends.cuda.matmul.allow_tf32 = True
