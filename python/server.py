@@ -80,13 +80,13 @@ def handle_client(client_socket):
                     break
                 
                 #process the image data TODO: Implement this
-                image = cv2.imdecode(image_data, cv2.IMREAD_COLOR)
+                image = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
                 cv2.imwrite("python/test_images/received_output.jpg", image)
                 print(f"Received image data ({len(image_data)}) bytes")
 
                 #Set the image in the predictor
                 predictors[predictor_id].set_image(image)
-                
+
                 #Send back acknowledgement
                 ack = b'SET_IMAGE_ACK'
                 client_socket.sendall(len(ack).to_bytes(4, 'big') + ack)
