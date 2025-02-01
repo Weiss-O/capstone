@@ -1,5 +1,7 @@
 import socket
 import SegmentationFilter
+import cv2
+import numpy as np
 
 predictors = {}
 
@@ -46,6 +48,8 @@ def handle_client(client_socket):
                 if predictor_id is None:
                     print("Did not receive predictor ID")
                     break
+                
+                predictors[predictor_id] = SegmentationFilter.SAM2Predictor()
 
                 #Send back ID registration acknowledgment
                 ack = b'ID_ACK'
@@ -74,10 +78,15 @@ def handle_client(client_socket):
                 if not image_data:
                     print("Did not receive image data")
                     break
-
+                
                 #process the image data TODO: Implement this
+                image = cv2.imdecode(image_data, cv2.IMREAD_COLOR)
+                cv2.imwrite("python/test_images/received_output.jpg", image)
                 print(f"Received image data ({len(image_data)}) bytes")
 
+                #Set the image in the predictor
+                predictors[predictor_id].set_image(image)
+                
                 #Send back acknowledgement
                 ack = b'SET_IMAGE_ACK'
                 client_socket.sendall(len(ack).to_bytes(4, 'big') + ack)
