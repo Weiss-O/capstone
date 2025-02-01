@@ -2,6 +2,7 @@ import socket
 import SegmentationFilter
 import cv2
 import numpy as np
+import struct
 
 predictors = {}
 
@@ -26,6 +27,31 @@ def recv_message(sock):
     # Now read the full message based on length
     message = recvall(sock, message_length)
     return message
+
+def send_prediction_results(sock, results):
+    """
+    Sends list of pred resuts
+    each is a [mask, score] pair
+
+    The protocol is:
+    - 4 bytes for number of results
+    - For each result:
+        - 4 bytes heighgt
+        - 4 bytes width
+        - height*width bytes: mask data
+        - 4 bytes for score
+        - 4 bytes: score
+    """
+    num_results = len(results)
+    sock.sendall(num_results.to_bytes(4, 'big'))
+    for mask, score in results:
+        mask = mask.astype(np.uint8)
+        height, width = mask.shape
+        sock.sendall(height.to_bytes(4, 'big'))
+        sock.sendall(width.to_bytes(4, 'big'))
+        mask_bytes = mask.tobytes()
+        sock.sendall(mask_bytes)
+        sock.sendall(struct.pack('!f', score))
 
 def handle_client(client_socket):
     try:
@@ -114,10 +140,12 @@ def handle_client(client_socket):
                 print(f"Received {num_prompts} prompts: {prompts}")
 
                 #TODO: Implement prediction computation and prepare response data
-
+                results = predictors[predictor_id].predict(prompts=prompts)
                 ack = b'PREDICT_ACK'
                 client_socket.sendall(len(ack).to_bytes(4, 'big') + ack)
-            
+
+                #Send the results
+                send_prediction_results(client_socket, results)
             else:
                 print(f"Unknown command: {command}")
                 break

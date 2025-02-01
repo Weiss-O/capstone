@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import os
 import cv2
+import struct
 if os.getenv("RPI", "False").lower() == "false":
 
     import ContourAnalysis as CA
@@ -29,7 +30,17 @@ class SAM2Predictor(PredictorInterface):
         self.predictor.set_image(image)
         
     def predict(self, **kwargs):
-        return self.predictor.predict(**kwargs)
+        output = []
+        for prompt in kwargs.get('prompts', []):
+            mask, score, logit = self.predictor.predict(
+                point_coords=prompt,
+                point_labels=[1],
+                multimask_output=False #TODO MAY NOT BE NEEDED
+            )
+            #mask = masks[np.argmax(scores)].astype(bool)
+            output.append([mask, score])
+        
+        return output
 
 # ----------------------------------
 # 2.5 Implement Remote Predictor Interface
@@ -94,7 +105,7 @@ class RemotePredictor(PredictorInterface):
         self.socket.sendall(command_length + command)
         self.socket.sendall(id_length + self.id)
         # Convert prompts to bytes
-        prompts = kwargs.get('point_coords', [])
+        prompts = kwargs.get('prompts', [])
         prompt_bytes = b''
         num_prompts = len(prompts)
         prompt_bytes += num_prompts.to_bytes(4, 'big')
@@ -112,11 +123,43 @@ class RemotePredictor(PredictorInterface):
         response = self.get_response()
         if response != b'PREDICT_ACK':
             raise Exception("Failed to get prediction")
+        results = self.receive_prediction_results(self.socket)
+
 
     def get_response(self):
         resp_len = int.from_bytes(self.socket.recv(4), 'big') 
         response = self.socket.recv(resp_len)
         return response
+    
+    def recvall(self, n):
+        """Helper function to receive exactly n bytes."""
+        data = b''
+        while len(data) < n:
+            packet = self.socket.recv(n - len(data))
+            if not packet:
+                raise ConnectionError("Socket connection lost")
+            data += packet
+        return data
+    
+    def receive_prediction_results(self):
+        results = []
+
+        num_results = int.from_bytes(self.recvall(self.socket, 4), 'big')
+
+        for _ in range(num_results):
+            height = int.from_bytes(self.recvall(self.socket, 4), 'big')
+            width = int.from_bytes(self.recvall(self.socket, 4), 'big')
+
+            #Calculate expected number of bytes
+            mask_size = height * width
+            mask_bytes = self.recvall(self.socket, mask_size)
+
+            mask=np.frombuffer(mask_bytes, dtype=np.uint8).reshape((height, width)).astype(bool)
+
+            score_bytes = self.recvall(self.socket, 4)
+            score = struct.unpack('!f', score_bytes)[0]
+            results.append([mask, score])
+        return results
 # ----------------------------------
 # 3. Create Predictor Factory
 # ----------------------------------
