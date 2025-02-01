@@ -144,19 +144,19 @@ class RemotePredictor(PredictorInterface):
     def receive_prediction_results(self):
         results = []
 
-        num_results = int.from_bytes(self.recvall(self.socket, 4), 'big')
+        num_results = int.from_bytes(self.recvall(4), 'big')
 
         for _ in range(num_results):
-            height = int.from_bytes(self.recvall(self.socket, 4), 'big')
-            width = int.from_bytes(self.recvall(self.socket, 4), 'big')
+            height = int.from_bytes(self.recvall( 4), 'big')
+            width = int.from_bytes(self.recvall( 4), 'big')
 
             #Calculate expected number of bytes
             mask_size = height * width
-            mask_bytes = self.recvall(self.socket, mask_size)
+            mask_bytes = self.recvall(mask_size)
 
             mask=np.frombuffer(mask_bytes, dtype=np.uint8).reshape((height, width)).astype(bool)
 
-            score_bytes = self.recvall(self.socket, 4)
+            score_bytes = self.recvall(4)
             score = struct.unpack('!f', score_bytes)[0]
             results.append([mask, score])
         return results
