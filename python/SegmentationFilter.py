@@ -123,6 +123,7 @@ class RemotePredictor(PredictorInterface):
         response = self.get_response()
         if response != b'PREDICT_ACK':
             raise Exception("Failed to get prediction")
+        print("Predict acknowledged")
         results = self.receive_prediction_results()
         return results
 
@@ -145,11 +146,11 @@ class RemotePredictor(PredictorInterface):
         results = []
 
         num_results = int.from_bytes(self.recvall(4), 'big')
-
+        print("Expecting results for ", num_results, " prompts")
         for _ in range(num_results):
-            height = int.from_bytes(self.recvall( 4), 'big')
-            width = int.from_bytes(self.recvall( 4), 'big')
-
+            height = int.from_bytes(self.recvall(4), 'big')
+            width = int.from_bytes(self.recvall(4), 'big')
+            print("Expecting mask of size: ", height, "x", width)
             #Calculate expected number of bytes
             mask_size = int.from_bytes(self.recvall(4), 'big')
             print("Expecting mask of size: ", mask_size)
