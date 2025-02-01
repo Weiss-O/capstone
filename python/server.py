@@ -1,4 +1,7 @@
 import socket
+import SegmentationFilter
+
+predictors = {}
 
 def recvall(sock, n):
     # Receive n bytes from a socket

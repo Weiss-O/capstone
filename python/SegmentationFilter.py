@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 import os
+import cv2
 if os.getenv("RPI", "False").lower() == "false":
-    import cv2
+
     import ContourAnalysis as CA
     import numpy as np
     print("On Computer")
@@ -56,7 +57,7 @@ class RemotePredictor(PredictorInterface):
         except Exception as e:
             print(f"Failed to initialize remote predictor: {e}")
 
-    def set_image(self, image_path):
+    def set_image(self, image):
         try:
             # Prepare message parts
             command = b'SET_IMAGE'
@@ -67,19 +68,17 @@ class RemotePredictor(PredictorInterface):
             self.socket.sendall(command_length + command)
             self.socket.sendall(id_length + self.id)
             
-            # Check size of image
-            image_size = os.path.getsize(image_path)
-            size_bytes = image_size.to_bytes(4, 'big')
-            self.socket.sendall(size_bytes)
+            # Encode the image
+            success, encoded_image = cv2.imencode('.jpg', image)
+            if not success:
+                raise Exception("Failed to encode image")
+            
+            # Convert to bytes
+            image_bytes =  encoded_image.tobytes()
 
-            #Stream the file in chunks
-            chunk_size = 8192
-            with open(image_path, 'rb') as f:
-                while True:
-                    chunk = f.read(chunk_size)
-                    if not chunk:
-                        break
-                    self.socket.sendall(chunk)
+            # Send with length header
+            size_bytes = len(image_bytes).to_bytes(4, 'big')
+            self.socket.sendall(size_bytes + image_bytes)
             
             #Check if image was received
             if self.get_response() != b'SET_IMAGE_ACK':
@@ -149,47 +148,27 @@ class PredictorFactory:
 # 4. Segmentation Filter Interface
 # ----------------------------------
 
-class SegmentationFilter(ABC):
+class SegmentationClassifier(ABC):
     @abstractmethod
     def filter(self, image, proposals) -> list:
         pass
 
 """
 # ----------------------------------
-# 5. Refactored IOU Filter with DI
+# 5. Refactored IOU Classifier
 # ----------------------------------
-class IOUSegmentationFilter(SegmentationFilter):
+class IOUSegmentationClassifier(SegmentationClassifier):
     def __init__(self,
                  baseline_predictor: PredictorInterface,
                  test_predictor: PredictorInterface,
                  iou_calculator,
-                 merger,
                  iou_threshold = 0.5):
         self.baseline_predictor = baseline_predictor
         self.test_predictor = test_predictor
         self.iou_calculator = iou_calculator
-        self.merger = merger
-        self.iou_threshold = iou_threshold
-
-    def merge_proposals(self, proposals):
-        #Loop through proposals and merge if IOU for mnaskAfter is above threshold. Repeat until no more merges occur.
-        merged = True
-        while merged:
-            merged = False
-            for i in range(len(proposals)):
-                for j in range(i+1, len(proposals)):
-                    iou = CA.calculate_iou(proposals[i].maskAfter, proposals[j].maskAfter)
-                    if iou > 0.8:
-                        #Merge the two proposals
-                        proposals[i].maskAfter = np.logical_or(proposals[i].maskAfter, proposals[j].maskAfter)
-                        proposals[i].prompt = np.round(np.mean([proposals[i].prompt, proposals[j].prompt], axis=0)).astype(int)
-                        del proposals[j]
-                        merged = True
-                        break
-                if merged:
-                    break
-
-        
+        if self.iou_calculator is None:
+            self.iou_calculator = CA.calculate_iou
+        self.iou_threshold = iou_threshold        
 
     def filter(self, image, proposals) -> list:
         self.test_predictor.set_image(image)
@@ -197,10 +176,8 @@ class IOUSegmentationFilter(SegmentationFilter):
         processed = [self._process_proposal(p) 
                     for p in proposals]
         
-        filtered = self._apply_iou_filter(processed)
-        merged = self.merger.merge(filtered)
+        positive_classifications = self._apply_iou_filter(processed)
 
-        return merged
         
         for proposal in proposals:
             masksBaseline, scoresBaseline, logitsBaseline = self.baseline_predictor.predict(
@@ -259,14 +236,6 @@ class IOUSegmentationFilter(SegmentationFilter):
         return [p for p in processed 
                if self.iou_calculator(p) < self.iou_threshold]
 """
-
-class remoteSegmentationFilter(SegmentationFilter):
-    def __init__(self, server, POSID):
-        self.server = server
-        self.POSID = POSID
-
-    def filter(self, image, proposals) -> list:
-        pass
 
 if __name__ == "__main__":
     # Create a remote predictor
