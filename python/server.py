@@ -51,6 +51,7 @@ def send_prediction_results(sock, results):
         sock.sendall(width.to_bytes(4, 'big'))
         mask_bytes = mask.tobytes()
         mask_size = len(mask_bytes).to_bytes(4, 'big')
+        print(f"Sending mask of size {len(mask_bytes)} bytes")
         sock.sendall(mask_size + mask_bytes)
         sock.sendall(struct.pack('!f', score))
 

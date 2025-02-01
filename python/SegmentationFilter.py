@@ -152,11 +152,11 @@ class RemotePredictor(PredictorInterface):
 
             #Calculate expected number of bytes
             mask_size = int.from_bytes(self.recvall(4), 'big')
+            print("Expecting mask of size: ", mask_size)
             mask_bytes = self.recvall(mask_size)
-
-            mask=np.frombuffer(mask_bytes, dtype=np.uint8).reshape((height, width)).astype(bool)
-
             score_bytes = self.recvall(4)
+            
+            mask=np.frombuffer(mask_bytes, dtype=np.uint8).reshape((height, width)).astype(bool)
             score = struct.unpack('!f', score_bytes)[0]
             results.append([mask, score])
         return results
