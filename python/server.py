@@ -50,7 +50,8 @@ def send_prediction_results(sock, results):
         sock.sendall(height.to_bytes(4, 'big'))
         sock.sendall(width.to_bytes(4, 'big'))
         mask_bytes = mask.tobytes()
-        sock.sendall(mask_bytes)
+        mask_size = len(mask_bytes).to_bytes(4, 'big')
+        sock.sendall(mask_size + mask_bytes)
         sock.sendall(struct.pack('!f', score))
 
 def handle_client(client_socket):
@@ -144,6 +145,7 @@ def handle_client(client_socket):
                 ack = b'PREDICT_ACK'
                 client_socket.sendall(len(ack).to_bytes(4, 'big') + ack)
 
+                print("sending_results")
                 #Send the results
                 send_prediction_results(client_socket, results)
             else:
