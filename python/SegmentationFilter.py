@@ -6,7 +6,6 @@ if os.getenv("RPI", "False").lower() == "false":
 
     import ContourAnalysis as CA
     import numpy as np
-    print("On Computer")
 
 
 # ----------------------------------
@@ -32,13 +31,14 @@ class SAM2Predictor(PredictorInterface):
     def predict(self, **kwargs):
         output = []
         for prompt in kwargs.get('prompts', []):
+            point = np.array([[prompt[0], prompt[1]]])
             mask, score, logit = self.predictor.predict(
-                point_coords=prompt,
-                point_labels=[1],
+                point_coords=point,
+                point_labels=np.array([1]),
                 multimask_output=False #TODO MAY NOT BE NEEDED
             )
             #mask = masks[np.argmax(scores)].astype(bool)
-            output.append([mask, score])
+            output.append([mask[0], score[0]])
         
         return output
 
@@ -123,8 +123,8 @@ class RemotePredictor(PredictorInterface):
         response = self.get_response()
         if response != b'PREDICT_ACK':
             raise Exception("Failed to get prediction")
-        results = self.receive_prediction_results(self.socket)
-
+        results = self.receive_prediction_results()
+        return results
 
     def get_response(self):
         resp_len = int.from_bytes(self.socket.recv(4), 'big') 
