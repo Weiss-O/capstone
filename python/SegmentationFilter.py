@@ -2,10 +2,10 @@ from abc import ABC, abstractmethod
 import os
 import cv2
 import struct
+import numpy as np
 if os.getenv("RPI", "False").lower() == "false":
 
     import ContourAnalysis as CA
-    import numpy as np
 
 
 # ----------------------------------
@@ -138,7 +138,8 @@ class RemotePredictor(PredictorInterface):
         while len(data) < n:
             packet = self.socket.recv(n - len(data))
             if not packet:
-                raise ConnectionError("Socket connection lost")
+                #Connection closed unexpectedly
+                return None
             data += packet
         return data
     
