@@ -36,21 +36,21 @@ class BasicDetector(Detector):
     
     def _mergeDetections(self, detections):
         if self.merger is not None:
-            detections = self.merger.merge(detections, iou_threshold=0.8)
+            detections = self.merger.merge(detections, iou_threshold=0.5)
 
     
 if __name__ == "__main__":
     import os
-    import socket
-    import yaml
+    # import socket
+    # import yaml
 
-    with open("config.yaml", "r") as file:
-        config = yaml.safe_load(file)
+    # with open("config.yaml", "r") as file:
+    #     config = yaml.safe_load(file)
 
-    HOST = config["server_settings"]["HOST"]
-    PORT = config["server_settings"]["PORT"]
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((HOST, PORT))
+    # HOST = config["server_settings"]["HOST"]
+    # PORT = config["server_settings"]["PORT"]
+    # s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # s.connect((HOST, PORT))
     
     root_dir = os.path.dirname(os.path.abspath(__file__))+ "/"
 
@@ -59,8 +59,8 @@ if __name__ == "__main__":
 
 
     classifier = CL.IOUSegmentationClassifier(
-         baseline_predictor=CL.RemotePredictor(s),
-         test_predictor=CL.RemotePredictor(s),
+         baseline_predictor=CL.SAM2Predictor(),
+         test_predictor=CL.SAM2Predictor(),
          baseline=baseline)         
 
     detector = BasicDetector(baseline=baseline,
