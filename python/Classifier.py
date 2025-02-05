@@ -3,10 +3,7 @@ import os
 import cv2
 import struct
 import numpy as np
-if os.getenv("RPI", "False").lower() == "false":
-
-    import ContourAnalysis as CA
-
+import ContourAnalysis as CA
 
 # ----------------------------------
 # 1. Create Model Predictor Interface
@@ -193,28 +190,30 @@ class PredictorFactory:
 # 4. Segmentation Filter Interface
 # ----------------------------------
 
-class SegmentationClassifier(ABC):
+class Classifier(ABC):
     @abstractmethod
-    def filter(self, image, proposals) -> list:
+    def classify(self, image, proposals) -> list:
         pass
 
 # ----------------------------------
 # 5. Refactored IOU Classifier
 # ----------------------------------
-class IOUSegmentationClassifier(SegmentationClassifier):
+class IOUSegmentationClassifier(Classifier):
     def __init__(self,
                  baseline_predictor: PredictorInterface,
                  test_predictor: PredictorInterface,
-                 iou_calculator,
-                 iou_threshold = 0.5):
+                 iou_calculator = None,
+                 iou_threshold = 0.5,
+                 **kwargs):
         self.baseline_predictor = baseline_predictor
         self.test_predictor = test_predictor
         self.iou_calculator = iou_calculator
         if self.iou_calculator is None:
             self.iou_calculator = CA.calculate_iou
-        self.iou_threshold = iou_threshold        
+        self.iou_threshold = iou_threshold
+        self.kwargs = kwargs      
 
-    def filter(self, image, proposals) -> list:
+    def classify(self, image, proposals) -> list:
         self.test_predictor.set_image(image)
         
         baseline_results, test_results = self._process_proposals(proposals)
@@ -225,9 +224,9 @@ class IOUSegmentationClassifier(SegmentationClassifier):
             proposals[i].testMask = test_results[i][0]
             proposals[i].testScore = test_results[i][1]
 
-        positive_classifications = self._apply_iou_filter(proposals)
+        classified_proposals = self._apply_iou_filter(proposals)
 
-        return positive_classifications
+        return classified_proposals
     
     def _process_proposals(self, proposals):
         # Extract prediction logic
@@ -240,12 +239,23 @@ class IOUSegmentationClassifier(SegmentationClassifier):
     def _apply_iou_filter(self, processed):
         # Implement threshold logic
         for i in range(len(processed)):
-            for j in range(i+1, len(processed)):
+            for j in range(i, len(processed)):
                 iou = self.iou_calculator(processed[i].baselineMask, processed[j].testMask)
                 if iou > self.iou_threshold:
                     processed[i].iou = 1
                     break
-        return [proposal for proposal in processed if proposal.iou < self.iou_threshold]
+                elif i == j:
+                    processed[i].iou = iou
+
+        for i in range(len(processed)):
+            if processed[i].iou < self.iou_threshold:
+                processed[i].decision = True
+            else:
+                processed[i].decision = False
+        if self.kwargs.get("return_all", False):
+            return processed
+        else:
+            return [p for p in processed if p.decision]
 
 if __name__ == "__main__":
     # Create a remote predictor

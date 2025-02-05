@@ -1,5 +1,5 @@
 import socket
-import SegmentationFilter
+import Classifier
 import cv2
 import numpy as np
 import struct
@@ -78,7 +78,7 @@ def handle_client(client_socket):
                     print("Did not receive predictor ID")
                     break
                 
-                predictors[predictor_id] = SegmentationFilter.SAM2Predictor()
+                predictors[predictor_id] = Classifier.SAM2Predictor()
 
                 #Send back ID registration acknowledgment
                 ack = b'ID_ACK'

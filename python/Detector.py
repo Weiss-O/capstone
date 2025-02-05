@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 import OPO as OPO
 import ProposalGenerator as PG
-import SegmentationFilter as SF
+import Classifier as CL
+import NMS as NMS
 import cv2
 import numpy as np
 
@@ -13,39 +14,48 @@ class Detector(ABC):
 #Basic Detector Class for before after comparison
 #   Baseline image is passed to detector during init
 #       One baseline image per detector instance
-#   Image and baseline are passed to proposalGen and segFilter
-#       Unsure whether proposalGen and SegFilter should be classes or class instances
+#   Image and baseline are passed to proposalGen and Classifier
+#       Unsure whether proposalGen and Classifier should be classes or class instances
 class BasicDetector(Detector):
-    def __init__(self, baseline, proposal_generator:PG.ProposalGenerator=None, segmentation_filter:SF.SegmentationFilter=None):
+    def __init__(self,
+                 baseline,
+                 proposal_generator:PG.ProposalGenerator,
+                 classifier:CL.Classifier,
+                 merger:NMS.Merger = None):
         self.baseline = baseline
-        self.segmentation_filter = segmentation_filter
+        self.classifier = classifier
         self.proposal_generator = proposal_generator
-
-        if self.proposal_generator is None:
-            self.proposal_generator = PG.SSIMProposalGenerator(
-                baseline=self.baseline, areaThreshold=100
-            )
-        if self.segmentation_filter is None:
-            self.segmentation_filter = SF.IOUSegmentationFilter(baseline=self.baseline, iouThreshold=0.7)
+        self.merger = merger
 
     #Function to take in image and generate list of objects
     def detect(self, imageObj) -> list:
         proposals = self.proposal_generator.generateProposals(imageObj)
-        proposals = self.segmentation_filter.filter(imageObj, proposals)
-        return proposals
+        detections = self.classifier.classify(imageObj, proposals)
+        self._mergeDetections(detections)
+        return detections
+    
+    def _mergeDetections(self, detections):
+        if self.merger is not None:
+            detections = self.merger.merge(detections, iou_threshold=0.8)
 
     
 if __name__ == "__main__":
     import os
     root_dir = os.path.dirname(os.path.abspath(__file__))+ "/"
 
-    baseline = cv2.imread(os.path.join(root_dir, "test_set/capture_2.jpg"))
-    image = cv2.imread(os.path.join(root_dir, "test_set/capture_17.jpg"))
+    baseline = cv2.imread(os.path.join(root_dir, "test_images/fr_baseline.jpg"))
+    image = cv2.imread(os.path.join(root_dir, "test_images/fr_test.jpg"))
 
+    classifier = CL.IOUSegmentationClassifier(
+         baseline_predictor=CL.SAM2Predictor(),
+         test_predictor=CL.SAM2Predictor())         
 
-
-    detector = BasicDetector(baseline=baseline)
-    detections = detector.detect(imageObj = image)
+    detector = BasicDetector(baseline=baseline,
+                             proposal_generator=PG.SSIMProposalGenerator,
+                             classifier=classifier,
+                             merger=NMS.TestMaskIOUMerger)
+    
+    detections = detector.detect(imageObj=image)
     #Create a copy of the baseline image for showing maskBefore
     baseline_vis = baseline.copy()
 
