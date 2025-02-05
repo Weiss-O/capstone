@@ -91,7 +91,7 @@ class Camera:
     
 if __name__ == "__main__":
     #Create a camera object
-    camera = Camera(4.74, 2592, 4608, 50, 1.4e-3)
+    camera = Camera(4.74, 4608, 2592, 50, 1.4e-3)
     print(camera.FOV)
 
     ##VISUALIZATION CODE##
@@ -148,13 +148,13 @@ if __name__ == "__main__":
 
     world_objs = []
     box_locations = [
-        [room_width - w/2, room_width-w/2, -room_height],
-        [w/2, room_width-w/2, -room_height],
-        [room_width - w/2, w/2, -room_height],
-        [w/2, w/2, -room_height]
+        [room_width - w/2, room_width-w/2, -room_height + ft_to_mm(5)],
+        [w/2, room_width-w/2, -room_height + ft_to_mm(5)],
+        [room_width - w/2, w/2, -room_height + ft_to_mm(5)],
+        [w/2, w/2, -room_height + ft_to_mm(5)]
     ]
     for location in box_locations:
-        for box in generate_box(location, w, w, w/3):
+        for box in generate_box(location, w, w, 173):
             world_objs.append(box)
 
     #Plot the world obj
