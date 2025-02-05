@@ -46,16 +46,23 @@ if __name__ == "__main__":
     baseline = cv2.imread(os.path.join(root_dir, "test_images/fr_baseline.jpg"))
     image = cv2.imread(os.path.join(root_dir, "test_images/fr_test.jpg"))
 
+
     classifier = CL.IOUSegmentationClassifier(
-         baseline_predictor=CL.SAM2Predictor(),
-         test_predictor=CL.SAM2Predictor())         
+         baseline_predictor=CL.RemotePredictor(),
+         test_predictor=CL.RemotePredictor(),
+         baseline=baseline)         
 
     detector = BasicDetector(baseline=baseline,
-                             proposal_generator=PG.SSIMProposalGenerator,
+                             proposal_generator=PG.SSIMProposalGenerator(baseline = baseline,
+                                                                          areaThreshold=400),
                              classifier=classifier,
                              merger=NMS.TestMaskIOUMerger)
     
     detections = detector.detect(imageObj=image)
+
+    print ([detection.prompt for detection in detections])
+
+    """
     #Create a copy of the baseline image for showing maskBefore
     baseline_vis = baseline.copy()
 
@@ -66,16 +73,16 @@ if __name__ == "__main__":
         
         #Draw maskAfter on current image
         overlay = image.copy()
-        overlay[detection.maskAfter] = random_color
+        overlay[detection.testMask] = random_color
         cv2.addWeighted(overlay, 0.5, image, 0.5, 0, image)
 
         #Draw maskBefore on baseline image
         baseline_overlay = baseline_vis.copy()
-        baseline_overlay[detection.maskBefore] = random_color
+        baseline_overlay[detection.baselineMask] = random_color
         cv2.addWeighted(baseline_overlay, 0.5, baseline_vis, 0.5, 0, baseline_vis)
 
         #Draw prompt point and contour with same color as mask
-        cv2.circle(image, tuple(detection.prompt[0]), 5, random_color, -1)
+        cv2.circle(image, tuple(detection.prompt), 5, random_color, -1)
         cv2.drawContours(image, [detection.contour], -1, random_color, 3)
 
     cv2.imshow("Detections", image)
@@ -83,3 +90,4 @@ if __name__ == "__main__":
     cv2.waitKey(0)
 
     cv2.destroyAllWindows()
+    """

@@ -35,7 +35,7 @@ class SAM2Predictor(PredictorInterface):
                 multimask_output=False #TODO MAY NOT BE NEEDED
             ) #The _ is where logits would be returned. We don't need them for now.
             #mask = masks[np.argmax(scores)].astype(bool)
-            results.append([mask[0], score[0]])
+            results.append([mask[0].astype(bool), score[0]])
         
         return results
 
@@ -169,9 +169,9 @@ class PredictorFactory:
             #CUDA Setup
             import torch
             device = torch.device("cuda")
-            if torch.cuda.get_device_properties(0).major >= 8:
-                torch.backends.cuda.matmul.allow_tf32 = True
-                torch.backends.cudnn.allow_tf32 = True
+            # if torch.cuda.get_device_properties(0).major >= 8:
+            # torch.backends.cuda.matmul.allow_tf32 = True
+            # torch.backends.cudnn.allow_tf32 = True
             
             sam_path = os.path.expanduser("~/sam2")
             
@@ -211,7 +211,10 @@ class IOUSegmentationClassifier(Classifier):
         if self.iou_calculator is None:
             self.iou_calculator = CA.calculate_iou
         self.iou_threshold = iou_threshold
-        self.kwargs = kwargs      
+        self.kwargs = kwargs
+        baseline_image = self.kwargs.get("baseline")
+        if baseline_image is not None:
+            self.baseline_predictor.set_image(baseline_image)     
 
     def classify(self, image, proposals) -> list:
         self.test_predictor.set_image(image)

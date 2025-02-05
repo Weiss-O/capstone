@@ -9,7 +9,7 @@ import ContourAnalysis as CA
 
 
 class Proposal():
-    def __init__(self, contour, prompt):
+    def __init__(self, contour, prompt, maskAfter=None):
         self.contour = contour
         self.prompt = prompt
 
@@ -58,7 +58,7 @@ class SSIMProposalGenerator(ProposalGenerator):
         for c in contours:
             if cv2.contourArea(c) > self.areaThreshold:
                 #Find point on detection area closest to centroid
-                point = np.array([CA.get_centroid_safe(c)])
+                point = CA.get_centroid_safe(c)
                 
                 #Create proposal object
                 proposal = Proposal(c, prompt=point)
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     #For each proposal, add a bounding box to the image
     for proposal in proposals:
         cv2.drawContours(image, [proposal.contour], -1, (0, 255, 0), 2)
-        cv2.circle(image, tuple(proposal.prompt[0]), 5, (0, 0, 255), -1)
+        cv2.circle(image, tuple(proposal.prompt), 5, (0, 0, 255), -1)
     
     cv2.imshow("Proposals", image)
     cv2.waitKey(0)
