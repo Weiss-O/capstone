@@ -29,18 +29,18 @@ class SAM2Predictor(PredictorInterface):
         self.predictor.set_image(image)
         
     def predict(self, **kwargs):
-        output = []
+        results = []
         for prompt in kwargs.get('prompts', []):
             point = np.array([[prompt[0], prompt[1]]])
-            mask, score, logit = self.predictor.predict(
+            mask, score, _ = self.predictor.predict(
                 point_coords=point,
                 point_labels=np.array([1]),
                 multimask_output=False #TODO MAY NOT BE NEEDED
-            )
+            ) #The _ is where logits would be returned. We don't need them for now.
             #mask = masks[np.argmax(scores)].astype(bool)
-            output.append([mask[0], score[0]])
+            results.append([mask[0], score[0]])
         
-        return output
+        return results
 
 # ----------------------------------
 # 2.5 Implement Remote Predictor Interface
@@ -198,7 +198,6 @@ class SegmentationClassifier(ABC):
     def filter(self, image, proposals) -> list:
         pass
 
-"""
 # ----------------------------------
 # 5. Refactored IOU Classifier
 # ----------------------------------
@@ -218,69 +217,35 @@ class IOUSegmentationClassifier(SegmentationClassifier):
     def filter(self, image, proposals) -> list:
         self.test_predictor.set_image(image)
         
-        processed = [self._process_proposal(p) 
-                    for p in proposals]
+        baseline_results, test_results = self._process_proposals(proposals)
         
-        positive_classifications = self._apply_iou_filter(processed)
+        for i in range(len(proposals)):
+            proposals[i].baselineMask = baseline_results[i][0]
+            proposals[i].baselineScore = baseline_results[i][1]
+            proposals[i].testMask = test_results[i][0]
+            proposals[i].testScore = test_results[i][1]
 
-        
-        for proposal in proposals:
-            masksBaseline, scoresBaseline, logitsBaseline = self.baseline_predictor.predict(
-                point_coords=proposal.prompt,
-                point_labels=label,
-                multimask_output=True #TODO MAY NOT BE NEEDED
-            )
-        
-            masksTest, scoresTest, logitsTest = self.test_predictor.predict(
-                point_coords=proposal.prompt,
-                point_labels=np.array([1]),
-                multimask_output=True
-            )
+        positive_classifications = self._apply_iou_filter(proposals)
 
-            maskBefore = masksBaseline[np.argmax(scoresBaseline)].astype(bool)
-            maskAfter = masksTest[np.argmax(scoresTest)].astype(bool)
-
-            iou = CA.calculate_iou(maskBefore, maskAfter)
-
-            proposal.maskAfter = maskAfter
-            proposal.maskBefore = maskBefore
-            proposal.iou = iou
-            filtered_proposals.append(proposal)
-        
-        
-        #loop through. if the mask AFTER for a proposal has high IOU (0.8) with the mask BEFORE of any other proposal, set its iou = 1
-        for i in range(len(filtered_proposals)):
-            for j in range(i+1, len(filtered_proposals)):
-                iou = CA.calculate_iou(filtered_proposals[i].maskAfter, filtered_proposals[j].maskBefore)
-                if iou > self.iouThreshold:
-                    filtered_proposals[i].iou = 1
-                    break
-        
-        #filter out iou greater than threshold
-        filtered_proposals = [proposal for proposal in filtered_proposals if proposal.iou < self.iouThreshold]
-
-        #merge proposals which share maskAfter
-        self.merge_proposals(filtered_proposals)
-
-        print("# Filtered Proposals: ", len(filtered_proposals))
-        return filtered_proposals
+        return positive_classifications
     
-    def _process_proposal(self, proposal):
+    def _process_proposals(self, proposals):
         # Extract prediction logic
-        baseline_masks = self.baseline_predictor.predict(...) #TODO: Fill in the arguments
-        test_masks = self.test_predictor.predict(...) #TODO: Fill in the arguments
+        baseline_results = self.baseline_predictor.predict(prompts=[p.prompt for p in proposals])
+        test_results = self.test_predictor.predict(prompts = [p.prompt for p in proposals])
+
+        return baseline_results, test_results
         
-        return ProcessedProposal(
-            mask_before=baseline_masks[np.argmax(scores)],
-            mask_after=test_masks[np.argmax(scores)],
-            proposal=proposal
-        )
     
     def _apply_iou_filter(self, processed):
         # Implement threshold logic
-        return [p for p in processed 
-               if self.iou_calculator(p) < self.iou_threshold]
-"""
+        for i in range(len(processed)):
+            for j in range(i+1, len(processed)):
+                iou = self.iou_calculator(processed[i].baselineMask, processed[j].testMask)
+                if iou > self.iou_threshold:
+                    processed[i].iou = 1
+                    break
+        return [proposal for proposal in processed if proposal.iou < self.iou_threshold]
 
 if __name__ == "__main__":
     # Create a remote predictor

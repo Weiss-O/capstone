@@ -9,10 +9,9 @@ import ContourAnalysis as CA
 
 
 class Proposal():
-    def __init__(self, contour, prompt, maskAfter=None):
+    def __init__(self, contour, prompt):
         self.contour = contour
         self.prompt = prompt
-        self.maskAfter = maskAfter
 
 class ProposalGenerator(ABC):
     @abstractmethod
