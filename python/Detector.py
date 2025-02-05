@@ -41,6 +41,17 @@ class BasicDetector(Detector):
     
 if __name__ == "__main__":
     import os
+    import socket
+    import yaml
+
+    with open("config.yaml", "r") as file:
+        config = yaml.safe_load(file)
+
+    HOST = config["server_settings"]["HOST"]
+    PORT = config["server_settings"]["PORT"]
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((HOST, PORT))
+    
     root_dir = os.path.dirname(os.path.abspath(__file__))+ "/"
 
     baseline = cv2.imread(os.path.join(root_dir, "test_images/fr_baseline.jpg"))
@@ -48,8 +59,8 @@ if __name__ == "__main__":
 
 
     classifier = CL.IOUSegmentationClassifier(
-         baseline_predictor=CL.RemotePredictor(),
-         test_predictor=CL.RemotePredictor(),
+         baseline_predictor=CL.RemotePredictor(s),
+         test_predictor=CL.RemotePredictor(s),
          baseline=baseline)         
 
     detector = BasicDetector(baseline=baseline,
