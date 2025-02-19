@@ -30,26 +30,26 @@ server_settings:
 sam2_model:
   config_path: configs/sam2.1/sam2.1_hiera_l.yaml
   checkpoint_path: checkpoints/sam2.1_hiera_large.pt
-idle_time_vacant: 5
-idle_time_occupied: 5
+idle_time_vacant: 300
+idle_time_occupied: 15
 baseline:
   POS1:
-    image_path: baseline/baseline1.jpg
+    image_path: python/test_set/capture_2.jpg
     camera_pos:
     - 45
     - 60
   POS2:
-    image_path: baseline/baseline2.jpg
+    image_path: python/test_set/capture_2.jpg
     camera_pos:
     - 80
     - 39
   POS3:
-    image_path: baseline/baseline3.jpg
+    image_path: python/test_set/capture_2.jpg
     camera_pos:
     - 45
     - 39
   POS4:
-    image_path: baseline/baseline4.jpg
+    image_path: python/test_set/capture_2.jpg
     camera_pos:
     - 10
     - 39

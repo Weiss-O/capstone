@@ -9,12 +9,12 @@ with open('config.yaml') as file:
 
 
 #Import the necessary modules
-import socket
 import os
 from abc import ABC, abstractmethod
 from enum import Enum
 import time
-import cv2
+import cv2 #Currently used to read baseline image which is passed to baseline detector
+
 
 if os.environ.get('RPI', 'False').lower == 'true':
     import socket
@@ -28,6 +28,8 @@ import Detector
 import Camera
 import Controller
 import Classifier
+import PersonDetection
+import OPO
 
 #Enumeration class for the device states
 class DeviceState(Enum):
@@ -60,12 +62,13 @@ class Occupied(State):
             idle(config["idle_time_occupied"])
             return DeviceState.OCCUPIED
         else:
-            detectedObjects = []
+            detectedObjects = [] #TODO: Find a better way of managing the detected objects (clearing, adding to baseline, status, etc.)
             for image_prompt in imageArray:
-                detections = detectObjects(image_prompt["image"], image_prompt["POSID"]) #TODO: Need to correlate the image with the position
+                detections = detectObjects(image_prompt["image"], image_prompt["POSID"])
+                camera_position = config["baseline"][image_prompt["POSID"]]["camera_pos"]
                 for detection in detections:
-                    detectedObjects.append(OPO.Object(detection, image_prompt["POSID"])) #TODO: Only store the necessary information about the object, not all the detection information
-            #TODO: Store detected objects in device memory
+                    detectedObjects.append(OPO.Object(detection, camera_position)) #TODO: Only store the necessary information about the object, not all the detection information
+            
 
             idle(config["idle_time_vacant"])
             return DeviceState.VACANT
@@ -84,7 +87,7 @@ else:
 #Function to detect objects in an image
 #It checks if a detector has been initialized for the position, if not, it initializes one
 #TODO: It might be better to have the detector class handle the different baseline images itself
-#      to avoid creating so many predictors.
+#      to avoid creating so many predictors in the main script (still same number of predictors would need to be created)
 def detectObjects(image, POSID):
     if POSID not in detectors.keys():
         if os.environ.get('RPI', 'False').lower == 'true':
@@ -104,30 +107,32 @@ def detectObjects(image, POSID):
 
 
 def checkPointingConditions():
-    return False
-
-def detectPerson(image=None):
-    return False
+    return len(detectedObjects) > 0
 
 def scan():
     image_array = []
     for POSID in config["baseline"].keys():
         image = camera.capture()
-        PERSON_DETECTED = detectPerson(image=None) #TODO: Implement person detection
+        PERSON_DETECTED = PersonDetection.detect_person(image=image)
         if PERSON_DETECTED:
             return True, [] #Return empty list because no further processing should be done
         else:
             image_array.append({"image": image, "POSID": POSID})
     return False, image_array
 
-def idle(t):
+def idle(t): #TODO: Look into whether this is the best thing to be doing in the idle state or whether there should be other things happening
     time.sleep(t)
 
 def point(): #This is not the full functionality. The projection functionality needs to be implemented. For now we will point the camera.
     for obj in detectedObjects:
-        teensy.point_camera(obj.camera_position)
+        #TODO: There has to be a better way of doing this
+        camera.update_ReferenceFrame(obj.camera_position[0], obj.camera_position[1]) #Update the camera theta_phi to be the ones used to capture the image containing the object
+        pointing_ray = camera.calculate_pointing_ray(obj.point)
+        theta_actual, phi_actual = teensy.point_camera(pointing_ray)
+        print(f"Pointed camera to ({theta_actual}, {phi_actual})")
         time.sleep(1)
-        
+        detectedObjects.remove(obj)
+
 #Main function
 if __name__ == "__main__":    
     # -----------------------------------
@@ -135,25 +140,18 @@ if __name__ == "__main__":
     # -----------------------------------
 
     #Initialize the camera
-    cameraType = Camera.PiCamera if os.environ.get('RPI') == True else Camera.CameraStandIn
+    cameraType = Camera.PiCamera if os.environ.get('RPI', 'False') == 'true' else Camera.CameraStandIn #TODO: Make it so that this takes photo with  
     camera = cameraType(config["camera_settings"])
     camera.start()
     
     #Initialize the controller
-    teensy = Controller(config.controller_settings) #TODO: Implement this class
+    controllerType = Controller.Controller if os.environ.get('RPI', 'False').lower == 'true' else Controller.ControllerStandIn
+    teensy = controllerType.Controller(config.controller_settings) #TODO: Implement this class
 
     try:
         teensy.connect()
     except Exception as e:
         print("Controller is not connected: ", e)
-        exit()
-
-    #Check the server connection
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.connect((config.server_ip, config.server_port))
-    #Send message to server
-    if server is None:
-        print("Server is not connected")
         exit()
     
     state = config.initial_state

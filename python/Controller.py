@@ -13,12 +13,13 @@ class Controller():
         self.ser = serial.Serial(self.port, self.settings["baudrate"], timeout = self.settings["timeout"])
         self.ser.reset_input_buffer()
         self.is_open = self.ser.is_open
+        self.current_position = [0, 0]
         
     #Expexts an input in degreees
     def point_camera(self, theta, phi):
         theta_cam = theta - self.settings["camera_offset"]["theta"]
         phi_cam = phi - self.settings["camera_offset"]["phi"]
-        theta_steps = degrees_to_steps(theta_cam, self.settings["steps_per_revolution"])
+        theta_steps = -degrees_to_steps(theta_cam, self.settings["steps_per_revolution"])
         phi_steps = degrees_to_steps(phi_cam, self.settings["steps_per_revolution"])
         theta_actual = steps_to_degrees(theta_steps, self.settings["steps_per_revolution"]) + self.settings["camera_offset"]["theta"]
         phi_actual = steps_to_degrees(phi_steps, self.settings["steps_per_revolution"]) + self.settings["camera_offset"]["phi"]
@@ -43,7 +44,9 @@ class Controller():
             return e
 
     def moveAbsolute(self, theta_steps, phi_steps):
-        command = CommandGenerator.generate_point_command(theta_steps, phi_steps)
+        theta_relative = theta_steps - self.current_position[0]
+        phi_relative = phi_steps - self.current_position[1] #FIXME: This might be wrong
+        command = CommandGenerator.generate_point_command(theta_relative, phi_relative)
         self.ser.write(command.encode())
         self.ser.flush()
         
@@ -54,6 +57,7 @@ class Controller():
         #Check if positionining was successful
         if response != "SUCCESS":
             return Exception(f"Positioning Error: {response}")
+        self.current_position = [theta_steps, -phi_steps]
 
     #projects a cone. alpha and beta are in degrees
     def project_cone(self, alpha, beta):
@@ -84,6 +88,7 @@ class Controller():
         #Check if positionining was successful
         if response != "SUCCESS":
             return Exception(f"Zeroing Error")
+        self.current_position = [0, 0]
 
     def home(self):
         command = CommandGenerator.HOME_COMMAND
@@ -97,7 +102,19 @@ class Controller():
         #Check if positionining was successful
         if response != "SUCCESS":
             return Exception(f"Homing Error")
-        
+        self.current_position = [0, 0]
+
+class ControllerStandIn(Controller):
+    def __init__(self, controller_settings):
+        self.settings = controller_settings
+        self.is_open = True
+        self.current_position = [0, 0]
+
+    def moveAbsolute(self, theta_steps, phi_steps):
+        theta_relative = theta_steps - self.current_position[0]
+        phi_relative = phi_steps - self.current_position[1] #FIXME: This might be wrong
+        command = CommandGenerator.generate_point_command(theta_relative, phi_relative)
+        self.current_position = [theta_steps, -phi_steps]
 
 class CommandGenerator():
     @staticmethod
