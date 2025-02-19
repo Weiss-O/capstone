@@ -1,10 +1,12 @@
 import torch
+from torchvision import models
 # import cv2
 # import numpy as np
 
 model_confidence_threshold = 0.8
 
-model = torch.hub.load('pytorch/vision:v0.10.0', 'ssd_mobilenet_v3_large', pretrained=True)
+# Load the model
+model = models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
 model.eval()
 
 #Function to tell whether a person is in an image or not. Expects a numpy input/opencv image **in RGB format I think**
