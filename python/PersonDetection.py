@@ -6,7 +6,7 @@ from torchvision import models
 model_confidence_threshold = 0.8
 
 # Load the model
-model = models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
+model = models.detection.fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights.COCO_V1) #type: ignore
 model.eval()
 
 #Function to tell whether a person is in an image or not. Expects a numpy input/opencv image **in RGB format I think**
@@ -35,5 +35,5 @@ if __name__ == "__main__":
     import cv2
     # Loop through loading images in the test_set folder and checking if a person is in them
     for i in range(2, 42):
-        img = cv2.imread(f"test_set/capture_{i}.jpg")
+        img = cv2.imread(f"python/test_set/capture_{i}.jpg")
         print(f"capture_{i}.jpg: {detect_person(img)}")
