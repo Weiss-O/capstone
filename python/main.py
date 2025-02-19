@@ -13,12 +13,21 @@ import socket
 import os
 from abc import ABC, abstractmethod
 from enum import Enum
-import json
+import time
+import cv2
 
-# import config
-from Detector import BasicDetector
+if os.environ.get('RPI', 'False').lower == 'true':
+    import socket
+    HOST = config["server_settings"]["HOST"]
+    PORT = config["server_settings"]["PORT"]
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.connect((HOST, PORT))
+
+# import necessary modules
+import Detector
 import Camera
 import Controller
+import Classifier
 
 #Enumeration class for the device states
 class DeviceState(Enum):
@@ -52,27 +61,73 @@ class Occupied(State):
             return DeviceState.OCCUPIED
         else:
             detectedObjects = []
-            for image in imageArray:
-                detections = detectObjects(image)
-                detectedObjects.append(detections)
+            for image_prompt in imageArray:
+                detections = detectObjects(image_prompt["image"], image_prompt["POSID"]) #TODO: Need to correlate the image with the position
+                for detection in detections:
+                    detectedObjects.append(OPO.Object(detection, image_prompt["POSID"])) #TODO: Only store the necessary information about the object, not all the detection information
             #TODO: Store detected objects in device memory
-            
 
-            idle(config.idle_time_vacant)
+            idle(config["idle_time_vacant"])
             return DeviceState.VACANT
-            
+
+#Dictionary to store the detector for each baseline
+detectors={}
+detectedObjects = []
+
+#Initialize the test predictor - this is used for every test image prompt
+if os.environ.get('RPI', 'False').lower == 'true':
+    testPredictor = Classifier.RemotePredictor(server)
+else:
+    testPredictor = Classifier.SAM2Predictor()
+
+
+#Function to detect objects in an image
+#It checks if a detector has been initialized for the position, if not, it initializes one
+#TODO: It might be better to have the detector class handle the different baseline images itself
+#      to avoid creating so many predictors.
+def detectObjects(image, POSID):
+    if POSID not in detectors.keys():
+        if os.environ.get('RPI', 'False').lower == 'true':
+            baselinePredictor = Classifier.RemotePredictor(server)
+        else:
+            baselinePredictor = Classifier.SAM2Predictor()
+
+        baselineImage = cv2.imread(config["baseline"][POSID]["image_path"])
+
+        baselineClassifier = Classifier.IOUSegmentationClassifier(baseline_predictor=baselinePredictor,
+                                                                  test_predictor=testPredictor,
+                                                                  iou_threshold=0.5,
+                                                                  baseline_image=baselineImage)
+        detectors[POSID] = Detector.BasicDetector(baseline=baselineImage,
+                                                  classifier=baselineClassifier)
+    return detectors[POSID].detect(image)
+
+
 def checkPointingConditions():
     return False
 
+def detectPerson(image=None):
+    return False
+
 def scan():
-    return None, None
+    image_array = []
+    for POSID in config["baseline"].keys():
+        image = camera.capture()
+        PERSON_DETECTED = detectPerson(image=None) #TODO: Implement person detection
+        if PERSON_DETECTED:
+            return True, [] #Return empty list because no further processing should be done
+        else:
+            image_array.append({"image": image, "POSID": POSID})
+    return False, image_array
 
-def idle():
-    pass
+def idle(t):
+    time.sleep(t)
 
-def point():
-    pass
-
+def point(): #This is not the full functionality. The projection functionality needs to be implemented. For now we will point the camera.
+    for obj in detectedObjects:
+        teensy.point_camera(obj.camera_position)
+        time.sleep(1)
+        
 #Main function
 if __name__ == "__main__":    
     # -----------------------------------

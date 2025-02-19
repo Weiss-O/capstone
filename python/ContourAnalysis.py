@@ -26,7 +26,8 @@ def get_centroid_safe(contour):
     if cv2.pointPolygonTest(contour, centroid, False) < 0:
         contour_points = get_contour_points(contour, num_points=10)
         distances = np.linalg.norm(contour_points - centroid, axis=1).argmin()
-        centroid=contour_points[np.argmin(distances)]
+        min_dist_index = np.argmin(distances)
+        centroid=(contour_points[min_dist_index][0], contour_points[min_dist_index][1])
     return centroid
 
 #Function to calculate the intersection over union of two contours
