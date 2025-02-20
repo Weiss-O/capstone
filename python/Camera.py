@@ -55,7 +55,7 @@ class CameraStandIn(Camera):
     def capture(self):
         print("Captured image")
         image = cv2.imread("python/test_set/capture_42.jpg")
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         return image #TODO: This should match the return type of the actual capture function
     
     def update_ReferenceFrame(self, theta, phi):
@@ -94,10 +94,14 @@ class PiCamera(Camera):
         self.picam2.stop()
 
     def capture_file(self, image_path):
-        self.picam2.capture_file(image_path)
+        image = self.picam2.capture()
+        image = image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        cv2.imwrite(image_path, image)
 
     def capture(self):
-        return self.picam2.capture()
+        image = self.picam2.capture()
+        image = image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        return image
     
     def update_ReferenceFrame(self, theta, phi):
         self.reference_frame.calculate_T_cam_world(theta, phi)

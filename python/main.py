@@ -29,6 +29,7 @@ import Camera
 import Controller
 import Classifier
 import PersonDetection
+import ProposalGenerator as PG
 import OPO
 
 #Enumeration class for the device states
@@ -39,12 +40,15 @@ class DeviceState(Enum):
 #Define device states
 class State(ABC):
     @abstractmethod
-    def handle(self):
+    def handle():
         pass
 
 #State for when the user is not in the room
-class Vacant(State):
-    def handle(self):
+class Occupied(State):
+    @staticmethod
+    def handle():
+        if(checkPointingConditions()):
+            point()
         PERSON_DETECTED, _ = scan()
         if PERSON_DETECTED:
             return DeviceState.OCCUPIED
@@ -53,16 +57,19 @@ class Vacant(State):
             return DeviceState.VACANT
 
 #State for when the user is in the room
-class Occupied(State):
-    def handle(self):
-        if(checkPointingConditions()):
-                point()
+#Dictionary to store the detector for each baseline
+detectors={}
+detectedObjects = []
+
+class Vacant(State):
+    @staticmethod
+    def handle():
         PERSON_DETECTED, imageArray = scan()
         if PERSON_DETECTED:
             idle(config["idle_time_occupied"])
             return DeviceState.OCCUPIED
         else:
-            detectedObjects = [] #TODO: Find a better way of managing the detected objects (clearing, adding to baseline, status, etc.)
+            #TODO: Find a better way of managing the detected objects (clearing, adding to baseline, status, etc.)
             for image_prompt in imageArray:
                 detections = detectObjects(image_prompt["image"], image_prompt["POSID"])
                 camera_position = config["baseline"][image_prompt["POSID"]]["camera_pos"]
@@ -72,10 +79,6 @@ class Occupied(State):
 
             idle(config["idle_time_vacant"])
             return DeviceState.VACANT
-
-#Dictionary to store the detector for each baseline
-detectors={}
-detectedObjects = []
 
 #Initialize the test predictor - this is used for every test image prompt
 if os.environ.get('RPI', 'False').lower == 'true':
@@ -100,8 +103,10 @@ def detectObjects(image, POSID):
         baselineClassifier = Classifier.IOUSegmentationClassifier(baseline_predictor=baselinePredictor,
                                                                   test_predictor=testPredictor,
                                                                   iou_threshold=0.5,
-                                                                  baseline_image=baselineImage)
+                                                                  baseline=baselineImage)
         detectors[POSID] = Detector.BasicDetector(baseline=baselineImage,
+                                                  proposal_generator=PG.SSIMProposalGenerator(baseline=baselineImage,
+                                                                                              areaThreshold= 400),
                                                   classifier=baselineClassifier)
     return detectors[POSID].detect(image)
 
@@ -112,7 +117,11 @@ def checkPointingConditions():
 def scan():
     image_array = []
     for POSID in config["baseline"].keys():
+        #Move to position
+        pos = config["baseline"][POSID]["camera_pos"]
+        theta_actual, phi_actual = teensy.point_camera(pos[0], pos[1])
         image = camera.capture()
+        print (f"Captured image at position ({theta_actual}, {phi_actual})")
         PERSON_DETECTED = PersonDetection.detect_person(image=image)
         if PERSON_DETECTED:
             return True, [] #Return empty list because no further processing should be done
@@ -124,11 +133,11 @@ def idle(t): #TODO: Look into whether this is the best thing to be doing in the 
     time.sleep(t)
 
 def point(): #This is not the full functionality. The projection functionality needs to be implemented. For now we will point the camera.
-    for obj in detectedObjects:
+    for obj in detectedObjects[:]:  # Create a slice copy of the list
         #TODO: There has to be a better way of doing this
         camera.update_ReferenceFrame(obj.camera_position[0], obj.camera_position[1]) #Update the camera theta_phi to be the ones used to capture the image containing the object
         pointing_ray = camera.calculate_pointing_ray(obj.point)
-        theta_actual, phi_actual = teensy.point_camera(pointing_ray)
+        theta_actual, phi_actual = teensy.point_camera(pointing_ray[0], pointing_ray[1])
         print(f"Pointed camera to ({theta_actual}, {phi_actual})")
         time.sleep(1)
         detectedObjects.remove(obj)
@@ -146,19 +155,18 @@ if __name__ == "__main__":
     
     #Initialize the controller
     controllerType = Controller.Controller if os.environ.get('RPI', 'False').lower == 'true' else Controller.ControllerStandIn
-    teensy = controllerType.Controller(config.controller_settings) #TODO: Implement this class
-
-    try:
-        teensy.connect()
-    except Exception as e:
-        print("Controller is not connected: ", e)
-        exit()
+    teensy = controllerType(config["controller_settings"]) #TODO: Implement this class
+    if not teensy.is_open:
+        raise Exception("Controller not connected")
     
-    state = config.initial_state
+    # state = config['initial_state']
+    state = DeviceState.VACANT
     while(True):
         if state == DeviceState.OCCUPIED:
             state = Occupied.handle()
         elif state == DeviceState.VACANT:
             state = Vacant.handle()
+        else:
+            raise Exception("Invalid State")
 
     
