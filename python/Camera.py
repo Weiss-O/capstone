@@ -94,14 +94,20 @@ class PiCamera(Camera):
         self.picam2.stop()
 
     def capture_file(self, image_path):
-        image = self.picam2.capture_array()
-        image = image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        cv2.imwrite(image_path, image)
+        try:
+            image = self.picam2.capture_array()
+            image = image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+            cv2.imwrite(image_path, image)
+        except Exception as e:
+            return e
 
     def capture(self):
-        image = self.picam2.capture_array()
-        image = image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        return image
+        try:
+            image = self.picam2.capture_array()
+            image = image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+            return image
+        except Exception as e:
+            return e
     
     def update_ReferenceFrame(self, theta, phi):
         self.reference_frame.calculate_T_cam_world(theta, phi)
