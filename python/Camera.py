@@ -6,7 +6,7 @@ import os
 
 if os.environ.get('RPI', 'False').lower() == 'true':
     from picamera2 import Picamera2 #type:ignore
-    from picamera2 import controls #type:ignore
+    from libcamera import controls #type:ignore
 
 class Camera(ABC):
     @abstractmethod
