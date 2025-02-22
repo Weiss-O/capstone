@@ -44,7 +44,10 @@ for i, point in enumerate(points):
     theta_actual, phi_actual = teensy.point_camera(point[0], point[1]) #TODO: Fix the Arduino so that the positiv
     time.sleep(1) #Wait for the camera to stabilize
 
-    image_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"baseline/baseline{i}.jpg")
+    baseline_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "baseline")
+    if not os.path.exists(baseline_dir):
+        os.makedirs(baseline_dir)
+    image_path = os.path.join(baseline_dir, f"baseline{i}.jpg")
     camera.capture_file(image_path)
     time.sleep(2)
 
