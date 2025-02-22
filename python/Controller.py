@@ -19,7 +19,7 @@ class Controller():
     def point_camera(self, theta, phi):
         theta_cam = theta - self.settings["camera_offset"]["theta"]
         phi_cam = phi - self.settings["camera_offset"]["phi"]
-        theta_steps = -degrees_to_steps(theta_cam, self.settings["steps_per_revolution"])
+        theta_steps = degrees_to_steps(theta_cam, self.settings["steps_per_revolution"])
         phi_steps = degrees_to_steps(phi_cam, self.settings["steps_per_revolution"])
         theta_actual = steps_to_degrees(theta_steps, self.settings["steps_per_revolution"]) + self.settings["camera_offset"]["theta"]
         phi_actual = steps_to_degrees(phi_steps, self.settings["steps_per_revolution"]) + self.settings["camera_offset"]["phi"]
@@ -57,7 +57,7 @@ class Controller():
         #Check if positionining was successful
         if response != "SUCCESS":
             return Exception(f"Positioning Error: {response}")
-        self.current_position = [theta_steps, -phi_steps]
+        self.current_position = [theta_steps, phi_steps]
 
     #projects a cone. alpha and beta are in degrees
     def project_cone(self, alpha, beta):

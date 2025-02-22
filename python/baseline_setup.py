@@ -24,7 +24,7 @@ if not teensy.is_open:
 
 #Initialize the camera
 camera = PiCamera(config["camera_settings"]) #TODO: Implement this class
-camera.start() #TODO: Implement this method
+# camera.start() #TODO: Implement this method
 
 
 nominal_baseline_positions = [[45, 60], [80, 39], [45, 39], [10, 39]] #TODO: Re-calculate these positions for a horizontal camera
@@ -41,7 +41,7 @@ points = find_required_positions()
 #TODO: The below loop will assign points but it will not 
 #Move to each baseline position and take an image
 for i, point in enumerate(points):
-    theta_actual, phi_actual = teensy.point_camera(point[0], -point[1]) #TODO: Fix the Arduino so that the positive direction corresponds correctly to the positive phi axis
+    theta_actual, phi_actual = teensy.point_camera(point[0], point[1]) #TODO: Fix the Arduino so that the positive direction corresponds correctly to the positive phi axis
     time.sleep(1) #Wait for the camera to stabilize
     
     image_path = os.path.join(os.path.abspath(__file__), f"baseline/baseline{i}.jpg")
