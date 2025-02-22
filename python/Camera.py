@@ -94,12 +94,12 @@ class PiCamera(Camera):
         self.picam2.stop()
 
     def capture_file(self, image_path):
-        image = self.picam2.capture()
+        image = self.picam2.capture_array()
         image = image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         cv2.imwrite(image_path, image)
 
     def capture(self):
-        image = self.picam2.capture()
+        image = self.picam2.capture_array()
         image = image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         return image
     

@@ -35,7 +35,7 @@ def find_required_positions():
     return nominal_baseline_positions
 
 
-teensy.home() #TODO: Implement this Method
+# teensy.home() #TODO: Implement this Method
 points = find_required_positions()
 
 #TODO: The below loop will assign points but it will not 
