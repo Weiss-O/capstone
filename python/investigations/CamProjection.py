@@ -148,13 +148,13 @@ if __name__ == "__main__":
 
     world_objs = []
     box_locations = [
-        [room_width - w/2, room_width-w/2, -room_height + ft_to_mm(5)],
-        [w/2, room_width-w/2, -room_height + ft_to_mm(5)],
-        [room_width - w/2, w/2, -room_height + ft_to_mm(5)],
-        [w/2, w/2, -room_height + ft_to_mm(5)]
+        [room_width - w/2, room_width-w/2, -room_height],
+        [w/2, room_width-w/2, -room_height],
+        [room_width - w/2, w/2, -room_height],
+        [w/2, w/2, -room_height]
     ]
     for location in box_locations:
-        for box in generate_box(location, w, w, 173):
+        for box in generate_box(location, w, w, w):
             world_objs.append(box)
 
     #Plot the world obj

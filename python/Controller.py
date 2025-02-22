@@ -26,7 +26,7 @@ class Controller():
         
         try: 
             self.moveAbsolute(theta_steps, phi_steps)
-            return (theta_actual, phi_actual)
+            return theta_actual, phi_actual
         except Exception as e:
             print(f"Error pointing camera: {e}")
             return e
