@@ -15,7 +15,7 @@ import time
 import cv2 #Currently used to read baseline image which is passed to baseline detector
 
 
-if os.environ.get('RPI', 'False').lower == 'true':
+if os.environ.get('RPI', 'False').lower()== 'true':
     import socket
     HOST = config["server_settings"]["HOST"]
     PORT = config["server_settings"]["PORT"]
@@ -80,7 +80,7 @@ class Vacant(State):
             return DeviceState.VACANT
 
 #Initialize the test predictor - this is used for every test image prompt
-if os.environ.get('RPI', 'False').lower == 'true':
+if os.environ.get('RPI', 'False').lower()== 'true':
     testPredictor = Classifier.RemotePredictor(server)
 else:
     testPredictor = Classifier.SAM2Predictor()
@@ -92,7 +92,7 @@ else:
 #      to avoid creating so many predictors in the main script (still same number of predictors would need to be created)
 def detectObjects(image, POSID):
     if POSID not in detectors.keys():
-        if os.environ.get('RPI', 'False').lower == 'true':
+        if os.environ.get('RPI', 'False').lower()== 'true':
             baselinePredictor = Classifier.RemotePredictor(server)
         else:
             baselinePredictor = Classifier.SAM2Predictor()
@@ -153,7 +153,7 @@ if __name__ == "__main__":
     camera.start()
     
     #Initialize the controller
-    controllerType = Controller.Controller if os.environ.get('RPI', 'False').lower == 'true' else Controller.ControllerStandIn
+    controllerType = Controller.Controller if os.environ.get('RPI', 'False').lower()== 'true' else Controller.ControllerStandIn
     teensy = controllerType(config["controller_settings"]) #TODO: Implement this class
     if not teensy.is_open:
         raise Exception("Controller not connected")
