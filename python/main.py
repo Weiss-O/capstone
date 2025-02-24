@@ -148,16 +148,17 @@ if __name__ == "__main__":
     # -----------------------------------
 
     #Initialize the camera
-    cameraType = Camera.PiCamera if os.environ.get('RPI', 'False') == 'true' else Camera.CameraStandIn #TODO: Make it so that this takes photo with  
+    cameraType = Camera.PiCamera if os.environ.get('RPI', 'False').lower() == 'true' else Camera.CameraStandIn #TODO: Make it so that this takes photo with  
     camera = cameraType(config["camera_settings"])
     camera.start()
     
     #Initialize the controller
-    controllerType = Controller.Controller if os.environ.get('RPI', 'False').lower()== 'true' else Controller.ControllerStandIn
+    controllerType = Controller.Controller if os.environ.get('RPI', 'False').lower() == 'true' else Controller.ControllerStandIn
     teensy = controllerType(config["controller_settings"]) #TODO: Implement this class
     if not teensy.is_open:
         raise Exception("Controller not connected")
-    
+    time.sleep(2)
+
     # state = config['initial_state']
     state = DeviceState.VACANT
     while(True):
