@@ -67,8 +67,9 @@ class RemoteDetector(Detector):
         try:
             #Tell the server we want to init a new detector
             command = b'INIT_DETECTOR'
-            self.id = str(generate_detector_ID()).encode()
-            
+            self.id = str(generate_detector_ID(POSID=POSID)).encode()
+            print(f"Generated ID: {self.id} for position {POSID}")
+
             Server.send_bytes(self.server, command)
             resp = Server.get_response(self.server)
             if resp != b'INIT_DETECTOR_ACK':

@@ -106,7 +106,10 @@ def scan():
         theta_actual, phi_actual = teensy.point_camera(pos[0], pos[1])
         image = camera.capture()
         print (f"Captured image at position ({theta_actual}, {phi_actual})")
-        PERSON_DETECTED = PersonDetection.detect_person(image=image)
+        if os.environ.get('IGNORE_PEOPLE', 'False').lower()== 'true':
+            PERSON_DETECTED = False
+        else:
+            PERSON_DETECTED = PersonDetection.detect_person(image=image)
         if PERSON_DETECTED:
             teensy.home()
             return True, [] #Return empty list because no further processing should be done
