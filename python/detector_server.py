@@ -63,15 +63,17 @@ def handle_client(client_socket):
                 baseline = cv2.imdecode(np.frombuffer(baseline_bytes, np.uint8), cv2.IMREAD_COLOR)
                 print(f"Received baseline image of size {len(baseline_bytes)} bytes")
 
-                if not(detector_id in detectors.keys()):
-                    #Create the detector
-                    detectors[detector_id]["detector"] = create_detector(baseline)
-
                 #Acknowledge creation of the detector
                 Server.send_bytes(client_socket, b'BASELINE_ACK')
 
+                
                 camera_pos = Server.recv_coords(client_socket)
-                detectors[detector_id]["camera_pos"] = camera_pos
+
+                if not(detector_id in detectors.keys()):
+                    #Create the detector
+                    detectors[detector_id] = {"detector": create_detector(baseline),
+                                                "camera_pos": camera_pos}
+
                 print(f"Camera position for detector {detector_id}: {camera_pos}")
 
                 Server.send_bytes(client_socket, b'POS_ACK')

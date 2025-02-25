@@ -31,6 +31,8 @@ import PersonDetection
 import ProposalGenerator as PG
 import OPO
 
+scanned_for_objects = False
+
 #Enumeration class for the device states
 class DeviceState(Enum):
     VACANT = 0
@@ -53,6 +55,7 @@ class Occupied(State):
             return DeviceState.OCCUPIED
         else:
             idle(config["idle_time_vacant"])
+            scanned_for_objects = False
             return DeviceState.VACANT
 
 #State for when the user is in the room
@@ -63,7 +66,6 @@ detectedObjects = []
 class Vacant(State):
     @staticmethod
     def handle():
-        scanned_for_objects = False
         PERSON_DETECTED, imageArray = scan()
         if PERSON_DETECTED:
             print({"Person Detected!"})
