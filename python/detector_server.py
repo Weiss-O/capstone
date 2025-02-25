@@ -65,7 +65,7 @@ def handle_client(client_socket):
 
                 if not(detector_id in detectors.keys()):
                     #Create the detector
-                    detectors[detector_id] = create_detector(baseline)
+                    detectors[detector_id]["detector"] = create_detector(baseline)
 
                 #Acknowledge creation of the detector
                 Server.send_bytes(client_socket, b'BASELINE_ACK')
@@ -84,7 +84,7 @@ def handle_client(client_socket):
                 print(f"Received image of size {len(image_bytes)} bytes")
 
                 #Detect objects in the image
-                detections = detectors[detector_id].detect(image)
+                detections = detectors[detector_id]["detector"].detect(image)
 
                 #TODO: Send the detections
 

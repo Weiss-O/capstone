@@ -4,7 +4,7 @@ import ProposalGenerator as PG
 import Classifier as CL
 import NMS as NMS
 import cv2
-import numpy as np
+# import numpy as np
 import yaml
 import Server
 
@@ -46,6 +46,7 @@ class BasicDetector(Detector):
 
 import hashlib
 import json
+import struct
 
 
 def generate_detector_ID(POSID:str, length = 16):
@@ -98,6 +99,10 @@ class RemoteDetector(Detector):
             command = b'DETECT'
             Server.send_bytes(self.server, command)
             Server.send_bytes(self.server, self.id)
+            
+            resp = Server.get_response(self.server)
+            if resp != b'ID_ACK':
+                raise Exception(f"Expected ID_ACK but got {resp}")
 
             #Encode the image
             success, encoded_image = cv2.imencode('.jpg', imageObj)
