@@ -104,6 +104,7 @@ def scan():
         #Move to position
         pos = config["baseline"][POSID]["camera_pos"]
         theta_actual, phi_actual = teensy.point_camera(pos[0], pos[1])
+        time.sleep(1) #Wait for the camera to stabilize
         image = camera.capture()
         print (f"Captured image at position ({theta_actual}, {phi_actual})")
         if os.environ.get('IGNORE_PEOPLE', 'False').lower()== 'true':
