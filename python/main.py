@@ -63,6 +63,7 @@ detectedObjects = []
 class Vacant(State):
     @staticmethod
     def handle():
+        scanned_for_objects = False
         PERSON_DETECTED, imageArray = scan()
         if PERSON_DETECTED:
             print({"Person Detected!"})
@@ -70,21 +71,13 @@ class Vacant(State):
             return DeviceState.OCCUPIED
         else:
             #TODO: Find a better way of managing the detected objects (clearing, adding to baseline, status, etc.)
-            for image_prompt in imageArray:
-                detections = detectObjects(image_prompt["image"], image_prompt["POSID"])
-                camera_position = config["baseline"][image_prompt["POSID"]]["camera_pos"]
-                for detection in detections:
-                    detectedObjects.append(OPO.Object(detection, camera_position)) #TODO: Only store the necessary information about the object, not all the detection information
-            
-
+            if not(scanned_for_objects):
+                for image_prompt in imageArray:
+                    detectObjects(image_prompt["image"], image_prompt["POSID"])
+                scanned_for_objects = True
+                
             idle(config["idle_time_vacant"])
             return DeviceState.VACANT
-
-#Initialize the test predictor - this is used for every test image prompt
-if os.environ.get('RPI', 'False').lower()== 'true':
-    testPredictor = Classifier.RemotePredictor(server)
-else:
-    testPredictor = Classifier.SAM2Predictor()
 
 
 #Function to detect objects in an image
@@ -93,22 +86,13 @@ else:
 #      to avoid creating so many predictors in the main script (still same number of predictors would need to be created)
 def detectObjects(image, POSID):
     if POSID not in detectors.keys():
-        if os.environ.get('RPI', 'False').lower()== 'true':
-            baselinePredictor = Classifier.RemotePredictor(server)
-        else:
-            baselinePredictor = Classifier.SAM2Predictor()
+        detectors[POSID] = Detector.RemoteDetector(POSID=POSID,
+                                                   server=server)
+    
+    detections = detectors[POSID].detect(image)
 
-        baselineImage = cv2.imread(config["baseline"][POSID]["image_path"])
-
-        classifier = Classifier.IOUSegmentationClassifier(baseline_predictor=baselinePredictor,
-                                                                  test_predictor=testPredictor,
-                                                                  iou_threshold=0.5,
-                                                                  baseline=baselineImage)
-        detectors[POSID] = Detector.BasicDetector(baseline=baselineImage,
-                                                  proposal_generator=PG.SSIMProposalGenerator(baseline=baselineImage,
-                                                                                              areaThreshold= 1000),
-                                                  classifier=classifier)
-    return detectors[POSID].detect(image)
+    for detection in detections:
+        detectedObjects.append(OPO.Object(detection, POSID))
 
 
 def checkPointingConditions():
@@ -124,9 +108,11 @@ def scan():
         print (f"Captured image at position ({theta_actual}, {phi_actual})")
         PERSON_DETECTED = PersonDetection.detect_person(image=image)
         if PERSON_DETECTED:
+            teensy.home()
             return True, [] #Return empty list because no further processing should be done
         else:
             image_array.append({"image": image, "POSID": POSID})
+    teensy.home()
     return False, image_array
 
 def idle(t): #TODO: Look into whether this is the best thing to be doing in the idle state or whether there should be other things happening
@@ -136,7 +122,7 @@ def point(): #This is not the full functionality. The projection functionality n
     for obj in detectedObjects[:]:  # Create a slice copy of the list
         #TODO: There has to be a better way of doing this
         camera.update_ReferenceFrame(obj.camera_position[0], obj.camera_position[1]) #Update the camera theta_phi to be the ones used to capture the image containing the object
-        pointing_ray = camera.calculate_pointing_ray(obj.point)
+        pointing_ray = camera.calculate_pointing_ray(obj.center_point)
         theta_actual, phi_actual = teensy.point_camera(pointing_ray[0], pointing_ray[1])
         print(f"Pointed camera to ({theta_actual}, {phi_actual})")
         time.sleep(1)

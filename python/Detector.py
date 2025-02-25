@@ -124,6 +124,7 @@ class RemoteDetector(Detector):
             Server.send_bytes(self.server, encoded_image)
 
             detection_data = Server.recv_detections(self.server)
+            print(f"Received detections: {detection_data}")
             detections = [Detection.from_array(data) for data in detection_data]
 
             return detections
