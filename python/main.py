@@ -65,6 +65,7 @@ class Vacant(State):
     def handle():
         PERSON_DETECTED, imageArray = scan()
         if PERSON_DETECTED:
+            print({"Person Detected!"})
             idle(config["idle_time_occupied"])
             return DeviceState.OCCUPIED
         else:
@@ -99,14 +100,14 @@ def detectObjects(image, POSID):
 
         baselineImage = cv2.imread(config["baseline"][POSID]["image_path"])
 
-        baselineClassifier = Classifier.IOUSegmentationClassifier(baseline_predictor=baselinePredictor,
+        classifier = Classifier.IOUSegmentationClassifier(baseline_predictor=baselinePredictor,
                                                                   test_predictor=testPredictor,
                                                                   iou_threshold=0.5,
                                                                   baseline=baselineImage)
         detectors[POSID] = Detector.BasicDetector(baseline=baselineImage,
                                                   proposal_generator=PG.SSIMProposalGenerator(baseline=baselineImage,
-                                                                                              areaThreshold= 400),
-                                                  classifier=baselineClassifier)
+                                                                                              areaThreshold= 1000),
+                                                  classifier=classifier)
     return detectors[POSID].detect(image)
 
 

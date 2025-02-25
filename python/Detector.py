@@ -5,8 +5,11 @@ import Classifier as CL
 import NMS as NMS
 import cv2
 import numpy as np
+import yaml
+import Server
 
-# import config
+with open("config.yaml", "r") as file:
+    config = yaml.safe_load(file)
 
 class Detector(ABC):
     @abstractmethod
@@ -40,7 +43,88 @@ class BasicDetector(Detector):
         if self.merger is not None:
             detections = self.merger.merge(detections, iou_threshold=0.5)
 
-    
+
+import hashlib
+import json
+
+
+def generate_detector_ID(POSID:str, length = 16):
+    #Use the POSID to generate a unique hash for the detector
+    json_repr = json.dumps(config["baseline"][POSID], sort_keys=True, separators=(',', ':'))
+    hash_digest = hashlib.sha256(json_repr.encode()).digest()[:length]
+    return hash_digest.hex()
+
+class RemoteDetector(Detector):
+    def __init__(self,
+                 POSID:str,
+                 server):        
+        image_path = config["baseline"][POSID]["image_path"]
+        self.baseline = cv2.imread(image_path)
+        self.server = server
+        try:
+            #Tell the server we want to init a new detector
+            command = b'INIT_DETECTOR'
+            self.id = str(generate_detector_ID()).encode()
+            
+            Server.send_bytes(self.server, command)
+            resp = Server.get_response(self.server)
+            if resp != b'INIT_DETECTOR_ACK':
+                raise Exception(f"Expected INIT_DETECTOR_ACK but got {resp}")
+            
+            #Send a unique ID to facilitate request handling
+            Server.send_bytes(self.server, self.id)
+            resp = Server.get_response(self.server)
+            if resp != b'ID_ACK':
+                raise Exception(f"Expected ID_ACK but got {resp}")
+            
+            #Encode and send the baseline image for the detector
+            success, encoded_baseline = cv2.imencode('.jpg', self.baseline)
+            if not success:
+                raise Exception("Error encoding image")
+            
+            encoded_baseline = encoded_baseline.tobytes()
+
+            Server.send_bytes(self.server, encoded_baseline)
+            resp = Server.get_response(self.server)
+            if resp != b'BASELINE_ACK':
+                raise Exception(f"Expected BASELINE_ACK but got {resp}")
+
+        except Exception as e:
+            print(f"Error initializing detector: {e}")
+            raise e
+        
+    def detect(self, imageObj) -> list:
+        try:
+            command = b'DETECT'
+            Server.send_bytes(self.server, command)
+            Server.send_bytes(self.server, self.id)
+
+            #Encode the image
+            success, encoded_image = cv2.imencode('.jpg', imageObj)
+            if not success:
+                raise Exception("Error encoding image")
+
+            #Convert to bytes
+            encoded_image = encoded_image.tobytes()
+
+            #Send image with length header
+            Server.send_bytes(self.server, encoded_image)
+
+            #Check if the image was received and processed
+            # resp = Server.get_response(self.server)
+            # if resp != b'DETECT_ACK':
+            #     raise Exception(f"Expected DETECT_ACK but got {resp}")
+            #TODO: Acks should be implemented better.
+            # Ack should be used when server needs time to process
+            # The client will know not to timeout if it receives an ack
+            #TODO: Receive the detections from the server
+
+            return detections
+        except Exception as e:
+            print(f"Error detecting objects: {e}")
+            raise e
+
+
 if __name__ == "__main__":
     import os
     # import socket
