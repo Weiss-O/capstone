@@ -48,6 +48,7 @@ class State(ABC):
 class Occupied(State):
     @staticmethod
     def handle():
+        global scanned_for_objects
         if(checkPointingConditions()):
             point()
         PERSON_DETECTED, _ = scan()
@@ -66,6 +67,7 @@ detectedObjects = []
 class Vacant(State):
     @staticmethod
     def handle():
+        global scanned_for_objects
         PERSON_DETECTED, imageArray = scan()
         if PERSON_DETECTED:
             print({"Person Detected!"})
