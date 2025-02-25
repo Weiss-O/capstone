@@ -70,6 +70,12 @@ def handle_client(client_socket):
                 #Acknowledge creation of the detector
                 Server.send_bytes(client_socket, b'BASELINE_ACK')
 
+                camera_pos = Server.recv_coords(client_socket)
+                detectors[detector_id]["camera_pos"] = camera_pos
+                print(f"Camera position for detector {detector_id}: {camera_pos}")
+
+                Server.send_bytes(client_socket, b'POS_ACK')
+
             elif command == b'DETECT':
                 #Receive the detector ID
                 detector_id = Server.get_response(client_socket)

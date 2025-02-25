@@ -46,7 +46,6 @@ class BasicDetector(Detector):
 
 import hashlib
 import json
-import struct
 
 
 def generate_detector_ID(POSID:str, length = 16):
@@ -89,6 +88,12 @@ class RemoteDetector(Detector):
             resp = Server.get_response(self.server)
             if resp != b'BASELINE_ACK':
                 raise Exception(f"Expected BASELINE_ACK but got {resp}")
+
+            Server.send_coords(self.server, config["baseline"][POSID]["camera_pos"])
+
+            resp = Server.get_response(self.server)
+            if resp != b'POS_ACK':
+                raise Exception(f"Expected POS_ACK but got {resp}")
 
         except Exception as e:
             print(f"Error initializing detector: {e}")
