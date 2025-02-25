@@ -4,7 +4,7 @@ import ProposalGenerator as PG
 import Classifier as CL
 import NMS as NMS
 import cv2
-# import numpy as np
+import numpy as np
 import yaml
 import Server
 
@@ -37,6 +37,9 @@ class BasicDetector(Detector):
         proposals = self.proposal_generator.generateProposals(imageObj)
         detections = self.classifier.classify(imageObj, proposals)
         self._mergeDetections(detections)
+
+        #Convert the masks to a more memory efficient format easy to send over network
+        detections = [Detection.from_mask(detection.testMask) for detection in detections]
         return detections
     
     def _mergeDetections(self, detections):
@@ -120,20 +123,53 @@ class RemoteDetector(Detector):
             #Send image with length header
             Server.send_bytes(self.server, encoded_image)
 
-            #Check if the image was received and processed
-            # resp = Server.get_response(self.server)
-            # if resp != b'DETECT_ACK':
-            #     raise Exception(f"Expected DETECT_ACK but got {resp}")
-            #TODO: Acks should be implemented better.
-            # Ack should be used when server needs time to process
-            # The client will know not to timeout if it receives an ack
-            #TODO: Receive the detections from the server
+            detection_data = Server.recv_detections(self.server)
+            detections = [Detection.from_array(data) for data in detection_data]
 
             return detections
         except Exception as e:
             print(f"Error detecting objects: {e}")
             raise e
 
+class Detection():
+    def __init__(self, x:int, y:int, w:int, h:int):
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+    
+    def get_as_array(self):
+        """
+        Returns an array representation of the detection.
+        x, y, are referenced to top left corner of the bounding box.
+        
+        Returns:
+            list: A list containing the x, y, width, and height of the detection.
+        """
+        return [self.x, self.y, self.w, self.h]
+    
+    @staticmethod
+    def from_mask(mask):
+        """
+        Creates a Detection object from a binary mask.
+
+        Args:
+            mask: A boolean mask (numpy array) where True represents pixels that are part of the object.
+
+        Returns:
+            Detection: A new Detection object with the bounding box coordinates that enclose the mask.
+
+        Example:
+            >>> mask, score, logit = model.predict(image) #Using SAM2 predictor
+            >>> detection = Detection.from_mask(mask)
+        """
+        int_mask = (mask.astype(np.uint8)) * 255
+        x, y, w, h = cv2.boundingRect(int_mask)
+        return Detection(x, y, w, h)
+
+    @staticmethod
+    def from_array(array):
+        return Detection(array[0], array[1], array[2], array[3])
 
 if __name__ == "__main__":
     import os

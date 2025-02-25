@@ -90,14 +90,15 @@ def handle_client(client_socket):
                 print(f"Received image of size {len(image_bytes)} bytes")
 
                 #Detect objects in the image
-                detections = detectors[detector_id]["detector"].detect(image)
+                detections = detectors[detector_id]["detector"].detect(image) #Returns a list of Detection objects
+                
+                #Convert to array for sending to client
+                detections = [detection.get_as_array() for detection in detections]
 
                 #TODO: Send the detections
-
-                #Send back the detections
-                detections_json = json.dumps(detections)
-                detections_bytes = detections_json.encode()
-                Server.send_bytes(client_socket, detections_bytes)
+                print("Sending detections to client:")
+                print(detections)
+                Server.send_detections(client_socket, detections)
 
             else:
                 print(f"Unknown command: {command}")
