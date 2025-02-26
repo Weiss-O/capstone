@@ -7,6 +7,8 @@ import cv2
 import numpy as np
 import yaml
 import Server
+import os
+import DetectionVisualizer as DV
 
 with open("config.yaml", "r") as file:
     config = yaml.safe_load(file)
@@ -38,9 +40,16 @@ class BasicDetector(Detector):
         detections = self.classifier.classify(imageObj, proposals)
         self._mergeDetections(detections)
 
+        if os.getenv('VISUALIZE', 'False').lower() == 'true':
+            DV.plot_detections(detections, self.baseline, imageObj)
+
         #Convert the masks to a more memory efficient format easy to send over network
-        detections = [Detection.from_mask(detection.testMask) for detection in detections]
-        return detections
+        stripped_detections = [Detection.from_mask(detection.testMask) for detection in detections]
+        
+        if os.getenv('VISUALIZE', 'False').lower() == 'true':
+            DV.plot_camera(detections)
+        
+        return stripped_detections
     
     def _mergeDetections(self, detections):
         if self.merger is not None:
