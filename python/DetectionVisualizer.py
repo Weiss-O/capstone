@@ -80,7 +80,7 @@ def ft_to_mm(ft):
 room_width = ft_to_mm(15)
 room_height = ft_to_mm(10)
 
-def plot_camera(detections, camera_pos):
+def plot_camera(detections, camera_pos, baseline, test):
     """
     Function to visualize in 3D the camera FOV and the calculated projection rays.
 
@@ -94,9 +94,11 @@ def plot_camera(detections, camera_pos):
     camera.update_ReferenceFrame(camera_pos[0], camera_pos[1])
 
     #Create matplotlib figure
-    fig = plt.figure(figsize=(10, 5))
-    ax3d = fig.add_subplot(121, projection='3d')
-    ax2d = fig.add_subplot(122)
+    fig = plt.figure(figsize=(20, 10))
+    ax3d = fig.add_subplot(221, projection='3d')
+    ax2d = fig.add_subplot(222)
+    axBaseline = fig.add_subplot(223)
+    axTest = fig.add_subplot(224)
 
     # Add lines to pass through the origin for each axis
     ax3d.plot([-1000, 1000], [0, 0], [0, 0], 'k--', alpha=0.5)  # X-axis
@@ -171,6 +173,27 @@ def plot_camera(detections, camera_pos):
         'black'
     )
 
+    #Plot the baseline image in the bottom left
+    axBaseline.imshow(baseline)
+
+    axBaseline.set_title('Baseline Image')
+    axBaseline.axis('off')
+
+    #Plot the test image in the bottom right
+    axTest.imshow(test)
+
+    #Plot the camera_objs points on the test image
+    axTest.scatter([cam_obj[0] for cam_obj in camera_objs],
+                   [cam_obj[1] for cam_obj in camera_objs],
+                   c='r',
+                   s=100)
+
+
+    axTest.set_title('Test Image w/ Detections')
+    axTest.axis('off')
+
+    #Set the overall plot title
+    plt.suptitle(f'Camera Position (Theta, Phi): ({camera_pos[0]}, {camera_pos[1]})')
     #save the plot as an image
-    date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    plt.savefig(f"output/camera_{date}.png")
+    date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M")
+    plt.savefig(f"output/camera_{date}_{camera_pos[0]}_{camera_pos[1]}.png")

@@ -53,8 +53,10 @@ class Occupied(State):
             point()
         PERSON_DETECTED, _ = scan()
         if PERSON_DETECTED:
+            print("Person Detected! Room Still Occupied")
             return DeviceState.OCCUPIED
         else:
+            print("Scan complete without person detected.\nRoom now vacant.")
             idle(config["idle_time_vacant"])
             scanned_for_objects = False
             return DeviceState.VACANT
@@ -130,7 +132,7 @@ def point(): #This is not the full functionality. The projection functionality n
     for obj in detectedObjects[:]:  # Create a slice copy of the list
         #TODO: There has to be a better way of doing this
         camera.update_ReferenceFrame(obj.camera_position[0], obj.camera_position[1]) #Update the camera theta_phi to be the ones used to capture the image containing the object
-        pointing_ray = camera.calculate_pointing_ray(obj.center_coordinate)
+        pointing_ray = camera.calculate_pointing_ray(obj.center_coordinate, degrees=True)
         theta_actual, phi_actual = teensy.point_camera(pointing_ray[0], pointing_ray[1])
         print(f"Pointed camera to ({theta_actual}, {phi_actual})")
         time.sleep(1)

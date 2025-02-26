@@ -43,7 +43,7 @@ class BasicDetector(Detector):
         self._mergeDetections(detections)
 
         # if os.getenv('VISUALIZE', 'False').lower() == 'true':
-        DV.plot_detections(detections, self.baseline, imageObj)
+        # DV.plot_detections(detections, self.baseline, imageObj)
 
         #Convert the masks to a more memory efficient format easy to send over network
         stripped_detections = [Detection.from_mask(detection.testMask) for detection in detections]
@@ -52,8 +52,11 @@ class BasicDetector(Detector):
             #Get kwargs key caamera_pos from the kwargs dictionary
         camera_pos = kwargs.get('camera_pos', None)
         if camera_pos is not None:
-            DV.plot_camera(stripped_detections, camera_pos)
-        
+            DV.plot_camera(stripped_detections,
+                           camera_pos,
+                           cv2.cvtColor(self.baseline, cv2.COLOR_BGR2RGB),
+                           cv2.cvtColor(imageObj, cv2.COLOR_BGR2RGB))
+
         return stripped_detections
     
     def _mergeDetections(self, detections):
