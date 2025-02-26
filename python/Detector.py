@@ -8,7 +8,8 @@ import numpy as np
 import yaml
 import Server
 import os
-import DetectionVisualizer as DV
+if os.getenv('RPI', 'False').lower() == 'false':
+    import DetectionVisualizer as DV
 
 with open("config.yaml", "r") as file:
     config = yaml.safe_load(file)
