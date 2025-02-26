@@ -13,7 +13,7 @@ with open('config.yaml') as file:
     config = yaml.safe_load(file)
 
 import Classifier
-import PersonDetection
+# import PersonDetection
 import ProposalGenerator as PG
 # import OPO
 
@@ -92,7 +92,8 @@ def handle_client(client_socket):
                 print(f"Received image of size {len(image_bytes)} bytes")
 
                 #Detect objects in the image
-                detections = detectors[detector_id]["detector"].detect(image) #Returns a list of Detection objects
+                detections = detectors[detector_id]["detector"].detect(image,
+                                                                       camera_pos=detectors[detector_id]["camera_pos"]) #Returns a list of Detection objects
                 
                 #Convert to array for sending to client
                 detections = [detection.get_as_array() for detection in detections]

@@ -36,18 +36,17 @@ def plot_detections(detections, baseline_image, test_image):
     ax1.imshow(baseline_image)
     baselineMasks = [detection.baselineMask for detection in detections]
 
-    show_masks(ax1, baseline_image, baselineMasks)
+    show_masks(ax1, baselineMasks)
 
     #Plot the test image with the test masks
     ax2.imshow(test_image)
     testMasks = [detection.testMask for detection in detections]
 
-    show_masks(ax2, test_image, testMasks)
+    show_masks(ax2, testMasks)
 
     #Save the plot as an image
     date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     plt.savefig(f"output/detections_{date}.png")
-    plt.savefig("output/detections.png")
 
 def show_mask(mask, ax, random_color=True, borders = False):
     if random_color:
@@ -65,13 +64,15 @@ def show_mask(mask, ax, random_color=True, borders = False):
         mask_image = cv2.drawContours(mask_image, contours, -1, (1, 1, 1, 0.5), thickness=2) 
     ax.imshow(mask_image)
 
-def show_masks(ax, image, masks, borders=False):
-    for i, mask in enumerate(masks):
-        show_mask(mask, ax, borders=borders)
+def show_masks(ax, masks, borders=False):
+    if masks:  # Check if masks list is not empty
+        for i, mask in enumerate(masks[:3]):
+            if mask is not None:  # Check if individual mask is not None
+                show_mask(mask, ax, borders=borders)
 
         # if len(scores) > 1:
         #     ax.set_title(f"Mask {i+1}, Score: {score:.3f}", fontsize=18)
-        ax.axis('off')
+    # ax.axis('off')
 
 def ft_to_mm(ft):
     return ft*304.8
@@ -146,8 +147,9 @@ def plot_camera(detections, camera_pos):
         'b-'
     )
 
+    detection_boxes = [detection.get_as_array() for detection in detections]
     #Center of detected object in camera image
-    camera_objs = [detection.center_coordinate for detection in detections]
+    camera_objs = [[box[0] + box[2]/2, box[1] + box[3]/2, 1] for box in detection_boxes]
 
     ax2d.scatter([cam_obj[0] for cam_obj in camera_objs],
                              [-cam_obj[1] for cam_obj in camera_objs],

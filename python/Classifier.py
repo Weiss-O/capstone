@@ -169,9 +169,10 @@ class PredictorFactory:
             #CUDA Setup
             import torch
             device = torch.device("cuda")
-            # if torch.cuda.get_device_properties(0).major >= 8:
-            # torch.backends.cuda.matmul.allow_tf32 = True
-            # torch.backends.cudnn.allow_tf32 = True
+            torch.autocast("cuda", dtype=torch.bfloat16).__enter__()
+            if torch.cuda.get_device_properties(0).major >= 8:
+                torch.backends.cuda.matmul.allow_tf32 = True
+                torch.backends.cudnn.allow_tf32 = True
             
             sam_path = os.path.expanduser("~/sam2")
             

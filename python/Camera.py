@@ -61,7 +61,10 @@ class CameraStandIn(Camera):
     def update_ReferenceFrame(self, theta, phi):
         self.reference_frame.calculate_T_cam_world(theta, phi)
 
-    def calculate_pointing_ray(self, point):
+    def calculate_pointing_ray(self, point, degrees=True):
+        pointing_coord = self.reference_frame.estimate_theta_phi_abs(point)
+        if degrees:
+            pointing_coord = np.rad2deg(pointing_coord)
         return self.reference_frame.estimate_theta_phi_abs(point)
     
     def getDistortionMatrix(self):

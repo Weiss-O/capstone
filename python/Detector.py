@@ -29,26 +29,30 @@ class BasicDetector(Detector):
                  baseline,
                  proposal_generator:PG.ProposalGenerator,
                  classifier:CL.Classifier,
-                 merger:NMS.Merger = None):
+                 merger:NMS.Merger = None
+                 ):
         self.baseline = baseline
         self.classifier = classifier
         self.proposal_generator = proposal_generator
         self.merger = merger
 
     #Function to take in image and generate list of objects
-    def detect(self, imageObj) -> list:
+    def detect(self, imageObj, **kwargs) -> list:
         proposals = self.proposal_generator.generateProposals(imageObj)
         detections = self.classifier.classify(imageObj, proposals)
         self._mergeDetections(detections)
 
-        if os.getenv('VISUALIZE', 'False').lower() == 'true':
-            DV.plot_detections(detections, self.baseline, imageObj)
+        # if os.getenv('VISUALIZE', 'False').lower() == 'true':
+        DV.plot_detections(detections, self.baseline, imageObj)
 
         #Convert the masks to a more memory efficient format easy to send over network
         stripped_detections = [Detection.from_mask(detection.testMask) for detection in detections]
         
-        if os.getenv('VISUALIZE', 'False').lower() == 'true':
-            DV.plot_camera(detections)
+        # if os.getenv('VISUALIZE', 'False').lower() == 'true':
+            #Get kwargs key caamera_pos from the kwargs dictionary
+        camera_pos = kwargs.get('camera_pos', None)
+        if camera_pos is not None:
+            DV.plot_camera(stripped_detections, camera_pos)
         
         return stripped_detections
     
@@ -213,10 +217,9 @@ if __name__ == "__main__":
                              classifier=classifier,
                              merger=NMS.TestMaskIOUMerger)
     
-    detections = detector.detect(imageObj=image)
+    detections = detector.detect(imageObj=image, camera_pos=[45, 45])
 
-    print ([detection.prompt for detection in detections])
-
+    print([detection.get_as_array() for detection in detections])
     """
     #Create a copy of the baseline image for showing maskBefore
     baseline_vis = baseline.copy()
