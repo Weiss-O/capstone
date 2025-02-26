@@ -72,7 +72,7 @@ class Vacant(State):
         global scanned_for_objects
         PERSON_DETECTED, imageArray = scan()
         if PERSON_DETECTED:
-            print({"Person Detected!"})
+            print("Person Detected! State switched to Occupied.")
             idle(config["idle_time_occupied"])
             return DeviceState.OCCUPIED
         else:
