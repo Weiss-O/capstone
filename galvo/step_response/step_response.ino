@@ -5,11 +5,12 @@ const int16_t topMin = 60;
 const int16_t bottomMin = 54;
 
 // corresponds to 0.2V motor minimum at 5V supply
-const int16_t minPWM = 10;
+const int16_t minPWM = 0;
+const int16_t deadband = 0;
 
 // controller gains
-const float kp = 15;
-const float ki = 20;
+const float kp = 12;
+const float ki = 5;
 
 // max angular range from -theta to +theta
 const float angleRange = 22.5;
@@ -28,8 +29,8 @@ const uint8_t speedPin = 6;
 // Lookup table parameters
 const uint16_t tableSize = 360;  // Number of entries in the sine lookup table
 float sineLookup[tableSize];  // Sine wave lookup table
-float A = 8;  // Amplitude (Degrees)
-float f = 0.5; // Frequency (Hz)
+float A = 3;  // Amplitude (Degrees)
+float f = 15; // Frequency (Hz)
 unsigned long period_us;  // Period in microseconds
 
 void setup() {
@@ -64,12 +65,6 @@ void loop() {
 
   // Get the reference angle from the lookup table
   float refAngle = sineLookup[tableIndex];
-  /*if (refAngle < 0){
-    refAngle = -5;
-  }
-  else {
-    refAngle = 5;
-  }*/
 
   // Read analog values from A0 and A1
   int analogValueA0 = analogRead(A0);
@@ -89,12 +84,12 @@ void loop() {
   int16_t commandSignal = (kp * error) + ki * integralErrorTotal;
 
   // send commands to the l298n
-  if(commandSignal < -1){
+  if(commandSignal < -deadband){
     digitalWrite(directionPin1, LOW);
     digitalWrite(directionPin2, HIGH);
     commandSignal -= minPWM;
   }
-  else if (commandSignal > 1){
+  else if (commandSignal > deadband){
     digitalWrite(directionPin1, HIGH);
     digitalWrite(directionPin2, LOW);
     commandSignal += minPWM;
@@ -102,6 +97,7 @@ void loop() {
   else{
     digitalWrite(directionPin1, LOW);
     digitalWrite(directionPin2, LOW);
+    //commandSignal = 0;
   }
   
   commandSignal = constrain(commandSignal, -255, 255);
