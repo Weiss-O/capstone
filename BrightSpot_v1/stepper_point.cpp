@@ -44,9 +44,9 @@ bool home_stepper() {
   }
 }
 
-bool point_steppers(int tilt_deg, int pan_deg) {
+bool point_steppers(int tilt_steps, int pan_steps) {
 
-  pan.move(pan_stpes); 
+  pan.move(pan_steps); 
   while (pan.isRunning()) {  
       pan.run();  // Keeps moving until it reaches the target
   }
@@ -55,6 +55,8 @@ bool point_steppers(int tilt_deg, int pan_deg) {
   while (tilt.isRunning()) {  
       tilt.run();  // Keeps moving until it reaches the target
   }
+
+  // fail if it doesn't hit the desired position
 
   return true;
 }
