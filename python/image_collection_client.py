@@ -46,54 +46,58 @@ def capture_and_send_image():
     Server.send_bytes(s, image_bytes)
 
 count = 0
-for point in nominal_baseline_positions:
-    #Move camera
-    teensy.point_camera(point[0], point[1])
-    time.sleep(1)
+try:
+    for point in nominal_baseline_positions:
+        #Move camera
+        teensy.point_camera(point[0], point[1])
+        time.sleep(1)
 
-    #Capture image at nominal position
-    capture_and_send_image()
+        #Capture image at nominal position
+        capture_and_send_image()
 
-    image_title = f"NP{point[0]:.2f}T{point[1]:.2f}_OP{0}T{0}"
-    #Convert to bytes
-    image_title_bytes = image_title.encode()
-    
-    #Send the title to the server
-    Server.send_bytes(s, image_title_bytes)
+        image_title = f"NP{point[0]:.2f}T{point[1]:.2f}_OP{0}T{0}"
+        #Convert to bytes
+        image_title_bytes = image_title.encode()
+        
+        #Send the title to the server
+        Server.send_bytes(s, image_title_bytes)
 
-    #Get response
-    response = Server.get_response(s)
-    if response != b"ACK":
-        raise Exception(f"Expected ACK but got {response}")
+        #Get response
+        response = Server.get_response(s)
+        if response != b"ACK":
+            raise Exception(f"Expected ACK but got {response}")
 
-    count += 1
-    print(f"{count*100/123:.1f}%: Sent image: {image_title}")
+        count += 1
+        print(f"{count*100/123:.1f}%: Sent image: {image_title}")
 
-    for offsets, steps in zip(offset_angles, offset_steps):
-        for pt in pan_tilt_combinations:
-            theta = point[0] + pt[0]*offsets
-            phi = point[1] + pt[1]*offsets
-            #Move camera to position
-            teensy.point_camera(theta, phi)
-            time.sleep(1)
+        for offsets, steps in zip(offset_angles, offset_steps):
+            for pt in pan_tilt_combinations:
+                theta = point[0] + pt[0]*offsets
+                phi = point[1] + pt[1]*offsets
+                #Move camera to position
+                teensy.point_camera(theta, phi)
+                time.sleep(1)
 
-            #Capture image at nominal position
-            capture_and_send_image()
+                #Capture image at nominal position
+                capture_and_send_image()
 
-            #Generate image title
-            image_title = f"NP{point[0]:.2f}T{point[1]:.2f}_OP{pt[0]*steps}T{pt[1]*steps}"
-            #Convert to bytes
-            image_title_bytes = image_title.encode()
-            
-            #Send the title to the server
-            Server.send_bytes(s, image_title_bytes)
-            #Get response
-            response = Server.get_response(s)
-            if response != b"ACK":
-                teensy.home()
-                raise Exception(f"Expected ACK but got {response}")
+                #Generate image title
+                image_title = f"NP{point[0]:.2f}T{point[1]:.2f}_OP{pt[0]*steps}T{pt[1]*steps}"
+                #Convert to bytes
+                image_title_bytes = image_title.encode()
+                
+                #Send the title to the server
+                Server.send_bytes(s, image_title_bytes)
+                #Get response
+                response = Server.get_response(s)
+                if response != b"ACK":
+                    raise Exception(f"Expected ACK but got {response}")
 
-            count += 1
-            print(f"{count*100/123:.1f}%: Sent image: {image_title}")
+                count += 1
+                print(f"{count*100/123:.1f}%: Sent image: {image_title}")
 
-print(f"Total images captured: {count}")
+    print(f"Total images captured: {count}")
+except Exception as e:
+    teensy.home()
+    camera.stop()
+    print(f"Error: {e}")
