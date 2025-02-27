@@ -29,7 +29,7 @@ def handle_client(client_socket):
             image_name = Server.get_response(client_socket)
             print(f"Received image: {image_name}")
             #Save the image
-            cv2.imwrite(f"{image_directory}/{image_name.decode()}", image)
+            cv2.imwrite(f"{image_directory}/{image_name.decode()}.jpg", image)
 
             #Send ACK
             Server.send_bytes(client_socket, b"ACK")
@@ -45,6 +45,8 @@ if __name__ == "__main__":
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((host, port))
     server_socket.listen()
+
+    print(f"Server listening on {host}:{port}")
 
     #Make directory
     os.makedirs(image_directory, exist_ok=True)

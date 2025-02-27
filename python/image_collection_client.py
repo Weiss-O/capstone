@@ -90,6 +90,7 @@ for point in nominal_baseline_positions:
             #Get response
             response = Server.get_response(s)
             if response != b"ACK":
+                teensy.home()
                 raise Exception(f"Expected ACK but got {response}")
 
             count += 1
