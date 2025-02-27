@@ -48,9 +48,28 @@ def lbp_map(image):
     return lbp
 
 # Load images
-before = cv2.imread('python/test_set/capture_2.jpg')
-after = cv2.imread('python/test_set/capture_41.jpg')
+before = cv2.imread('output/alignment_test_images/NP0.00T18.40_OP0T0.jpg')
+after = cv2.imread('output/alignment_test_images/NP0.00T18.40_OP-2T2.jpg')
 
+# #Detect the ORB keypoints and descriptors
+# orb = cv2.ORB_create()
+# kp1, des1 = orb.detectAndCompute(before,None)
+# kp2, des2 = orb.detectAndCompute(after,None)
+
+# # Match keypoints using FLANN
+# bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+# matches = bf.match(des1, des2)
+# matches = sorted(matches, key=lambda x: x.distance)
+
+# # Extract point correspondences
+# dst_pts = np.float32([kp1[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
+# src_pts = np.float32([kp2[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
+
+# # Compute homography (or affine if only rotation/translation)
+# M, mask = cv2.estimateAffinePartial2D(src_pts, dst_pts, method=cv2.RANSAC)
+
+# # Warp image
+# after = cv2.warpAffine(after, M, (before.shape[1], before.shape[0]))
 
 # Convert images to grayscale
 before_gray = cv2.cvtColor(before, cv2.COLOR_BGR2GRAY)
@@ -130,9 +149,20 @@ contour_areas = []
 lbp_img = lbp_map(before)
 lbp_img = cv2.merge([lbp_img, lbp_img, lbp_img])
 
+#make copies of before and after image to display rotated bounding boxes
+before_rotated = before.copy()
+after_rotated = after.copy()
+
+image_diagonal = np.sqrt(before.shape[0]**2 + before.shape[1]**2)
+min_area = 10000
+
+def check_rotated_rect(width, height, aspect_ratio):
+    if min(width, height) > 10 and max(width, height) < image_diagonal*0.8 and aspect_ratio > 0.2 and width*height > min_area:
+        return True
+
 for c in contours:
     area = cv2.contourArea(c)
-    if area > 40:
+    if area > min_area:
         contour_areas.append(area)
         x,y,w,h = cv2.boundingRect(c)
         cv2.rectangle(before, (x, y), (x + w, y + h), (36,255,12), 2)
@@ -147,6 +177,22 @@ for c in contours:
         cv2.drawContours(overlay, [c], 0, (0,0,255), -1)
         alpha = 0.3  # Transparency factor
         cv2.addWeighted(overlay, alpha, lbp_img, 1 - alpha, 0, lbp_img)
+
+        rect = cv2.minAreaRect(c)
+        (x,y), (w,h), angle = rect
+        aspect_ratio = min(w,h)/max(w,h)
+        
+        color = (0,0,255)
+        if check_rotated_rect(w, h, aspect_ratio):
+            #set color to green
+            color = (0,255,0)
+        
+        #Draw the rotated rectangle on each image
+        box = cv2.boxPoints(rect)
+        box = np.intp(box)
+        cv2.drawContours(before_rotated,[box],0,color,2)
+        cv2.drawContours(after_rotated,[box],0,color,2)
+
 
 
 
@@ -165,80 +211,55 @@ for c in contours_dil:
 
 
 # Display images
-cv2.imshow('before', before)
-cv2.imshow('after', after)
-cv2.imshow('diff', diff)
-cv2.imshow('diff_box', diff_box)
-cv2.imshow('mask', mask)
-cv2.imshow('mask_dil', mask_dil)
-cv2.imshow('filled after', filled_after)
-cv2.imshow('lbp', lbp_img)
-cv2.waitKey()
+# Create figure with 2x4 subplots
+fig, axs = plt.subplots(2, 5, figsize=(20, 10))
+fig.suptitle('Image Processing Steps - (-2, 2) Without Affine Transformation for Alignment')
+
+# Convert BGR to RGB for matplotlib display
+before_rgb = cv2.cvtColor(before, cv2.COLOR_BGR2RGB)
+after_rgb = cv2.cvtColor(after, cv2.COLOR_BGR2RGB)
+filled_after_rgb = cv2.cvtColor(filled_after, cv2.COLOR_BGR2RGB)
+
+# Plot images
+axs[0,0].imshow(before_rgb)
+axs[0,0].set_title('Before')
+
+axs[0,1].imshow(after_rgb)
+axs[0,1].set_title('After')
+
+axs[0,2].imshow(diff, cmap='gray')
+axs[0,2].set_title('Difference')
+
+axs[0,3].imshow(diff_box)
+axs[0,3].set_title('Difference with Boxes')
+
+axs[0,4].imshow(cv2.cvtColor(before_rotated, cv2.COLOR_BGR2RGB))
+axs[0,4].set_title('Before Rotated Rect')
+
+axs[1,0].imshow(mask)
+axs[1,0].set_title('Mask')
+
+axs[1,1].imshow(mask_dil)
+axs[1,1].set_title('Dilated Mask')
+
+axs[1,2].imshow(filled_after_rgb)
+axs[1,2].set_title('Filled After')
+
+axs[1,3].imshow(lbp_img)
+axs[1,3].set_title('LBP')
+
+axs[1,4].imshow(cv2.cvtColor(after_rotated, cv2.COLOR_BGR2RGB))
+axs[1,4].set_title('After Rotated Rect')
 
 
-# Function to update the histogram with the given bin and area filter
-def update(val):
-    # Get the number of bins and the minimum area from the sliders
-    bins = int(slider_bins.val)
-    min_area = slider_area.val
-    
-    # Filter contour areas based on the minimum area
-    filtered_areas = [area for area in contour_areas if area >= min_area]
-    
-    # Clear previous histogram and plot the new one
-    ax.clear()
+# Remove axes for cleaner look
+for ax in axs.flat:
+    ax.axis('off')
 
-    # Logarithmic binning
-    log_bins = np.logspace(np.log10(min(filtered_areas)), np.log10(max(filtered_areas)), bins)
-    
-    ax.hist(filtered_areas, bins=log_bins, color='blue', edgecolor='black')
-    ax.set_title('Histogram of Contour Areas')
-    ax.set_xlabel('Area')
-    ax.set_ylabel('Frequency')
-    ax.set_xscale('log')  # Set the x-axis to a logarithmic scale
-    fig.canvas.draw_idle()
-
-# Create the figure and axis for plotting
-fig, ax = plt.subplots()
-plt.subplots_adjust(bottom=0.25)
-
-# Initial histogram plot with logarithmic bins
-ax.hist(contour_areas, bins=np.logspace(np.log10(min(contour_areas)), np.log10(max(contour_areas)), 20), color='blue', edgecolor='black')
-ax.set_title('Histogram of Contour Areas')
-ax.set_xlabel('Area')
-ax.set_ylabel('Frequency')
-ax.set_xscale('log')  # Set the x-axis to a logarithmic scale
-
-# Slider for adjusting the number of bins
-ax_bins = plt.axes([0.2, 0.01, 0.65, 0.03], facecolor='lightgoldenrodyellow')
-slider_bins = Slider(ax_bins, 'Bins', 1, 100, valinit=20, valstep=1)
-
-# Slider for adjusting the minimum area
-ax_area = plt.axes([0.2, 0.06, 0.65, 0.03], facecolor='lightgoldenrodyellow')
-slider_area = Slider(ax_area, 'Min Area', 0, 1000, valinit=0, valstep=1)
-
-# Attach the update function to the sliders
-slider_bins.on_changed(update)
-slider_area.on_changed(update)
-
+plt.tight_layout()
 plt.show()
 
-#save images to output folder, under new subfolder named based on the current date and time
-import os
-import datetime
+####Experiment with re-aligning the images first.
 
-# Get the current date and time
-now = datetime.datetime.now()
-date_time = now.strftime("%Y-%m-%d %H-%M-%S")
+#Re-align images
 
-# Create a new directory to save the output images
-output_dir = 'output/' + date_time
-os.makedirs(output_dir)
-
-# Save the images to the output directory
-# cv2.imwrite(output_dir + '/before.jpg', before)
-# cv2.imwrite(output_dir + '/after.jpg', after)
-# cv2.imwrite(output_dir + '/diff.jpg', diff)
-# cv2.imwrite(output_dir + '/diff_box.jpg', diff_box)
-cv2.imwrite(output_dir + '/mask.jpg', mask)
-# cv2.imwrite(output_dir + '/filled_after.jpg', filled_after)
