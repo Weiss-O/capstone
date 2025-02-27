@@ -24,14 +24,34 @@ class SSIMProposalGenerator(ProposalGenerator):
         self.preprocessor = preprocessor if preprocessor != None else PP.GrayscaleGaussianPreprocessor()
         self.baseline = baseline
         self.areaThreshold = areaThreshold
-
+        self.image_diagonal = np.sqrt(self.baseline.shape[0]**2 + self.baseline.shape[1]**2)
         self.baseline_preprocessed = self.preprocess(self.baseline)
 
     def preprocess(self, image):
         return self.preprocessor.preprocess(image)
 
     def generateProposals(self, image) -> list:
-        image_preprocessed = self.preprocess(image)
+        #Detect the ORB keypoints and descriptors
+        orb = cv2.ORB_create()
+        kp1, des1 = orb.detectAndCompute(self.baseline,None)
+        kp2, des2 = orb.detectAndCompute(image,None)
+
+        # Match keypoints using FLANN
+        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+        matches = bf.match(des1, des2)
+        matches = sorted(matches, key=lambda x: x.distance)
+
+        # Extract point correspondences
+        dst_pts = np.float32([kp1[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
+        src_pts = np.float32([kp2[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
+
+        # Compute homography (or affine if only rotation/translation)
+        M, mask = cv2.estimateAffinePartial2D(src_pts, dst_pts, method=cv2.RANSAC)
+
+        # Warp image
+        image_preprocessed = cv2.warpAffine(image, M, (self.baseline.shape[1], self.baseline.shape[0]))
+        
+        image_preprocessed = self.preprocess(image_preprocessed)
 
         #Compute the SSIM between the two images
         score, diff = structural_similarity(
@@ -56,7 +76,11 @@ class SSIMProposalGenerator(ProposalGenerator):
         proposals = []
 
         for c in contours:
-            if cv2.contourArea(c) > self.areaThreshold:
+            rect = cv2.minAreaRect(c)
+            (x,y), (w,h), angle = rect
+            aspect_ratio = min(w,h)/max(w,h)
+
+            if min(w, h) > 10 and max(w, h) < self.image_diagonal*0.8 and aspect_ratio > 0.15 and w*h > self.areaThreshold:
                 #Find point on detection area closest to centroid
                 point = CA.get_centroid_safe(c)
                 

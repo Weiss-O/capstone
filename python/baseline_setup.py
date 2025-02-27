@@ -28,7 +28,7 @@ camera = PiCamera(config["camera_settings"])
 camera.start()
 
 
-nominal_baseline_positions = [[45, 70], [68.7, 38.4], [90-68.7, 38.4], [65.8, 18.4], [90-65.8,18.4]] #TODO: Re-calculate these positions for a horizontal camera
+nominal_baseline_positions = [[0, 70], [15, 38.4], [15-68.7, 38.4], [0, 18.4]] #TODO: Re-calculate these positions for a horizontal camera
 
 #TODO: Implement the below function properly
 #Find the required camera positions to cover the whole room

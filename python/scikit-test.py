@@ -49,27 +49,27 @@ def lbp_map(image):
 
 # Load images
 before = cv2.imread('output/alignment_test_images/NP0.00T18.40_OP0T0.jpg')
-after = cv2.imread('output/alignment_test_images/NP0.00T18.40_OP-2T2.jpg')
+after = cv2.imread('output/alignment_test_images/NP0.00T18.40_OP0T5.jpg')
 
-# #Detect the ORB keypoints and descriptors
-# orb = cv2.ORB_create()
-# kp1, des1 = orb.detectAndCompute(before,None)
-# kp2, des2 = orb.detectAndCompute(after,None)
+#Detect the ORB keypoints and descriptors
+orb = cv2.ORB_create()
+kp1, des1 = orb.detectAndCompute(before,None)
+kp2, des2 = orb.detectAndCompute(after,None)
 
-# # Match keypoints using FLANN
-# bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-# matches = bf.match(des1, des2)
-# matches = sorted(matches, key=lambda x: x.distance)
+# Match keypoints using FLANN
+bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+matches = bf.match(des1, des2)
+matches = sorted(matches, key=lambda x: x.distance)
 
-# # Extract point correspondences
-# dst_pts = np.float32([kp1[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
-# src_pts = np.float32([kp2[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
+# Extract point correspondences
+dst_pts = np.float32([kp1[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
+src_pts = np.float32([kp2[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
 
-# # Compute homography (or affine if only rotation/translation)
-# M, mask = cv2.estimateAffinePartial2D(src_pts, dst_pts, method=cv2.RANSAC)
+# Compute homography (or affine if only rotation/translation)
+M, mask = cv2.estimateAffinePartial2D(src_pts, dst_pts, method=cv2.RANSAC)
 
-# # Warp image
-# after = cv2.warpAffine(after, M, (before.shape[1], before.shape[0]))
+# Warp image
+after = cv2.warpAffine(after, M, (before.shape[1], before.shape[0]))
 
 # Convert images to grayscale
 before_gray = cv2.cvtColor(before, cv2.COLOR_BGR2GRAY)
@@ -213,7 +213,7 @@ for c in contours_dil:
 # Display images
 # Create figure with 2x4 subplots
 fig, axs = plt.subplots(2, 5, figsize=(20, 10))
-fig.suptitle('Image Processing Steps - (-2, 2) Without Affine Transformation for Alignment')
+fig.suptitle('Image Processing Steps - (0, 5) With Affine Transformation for Alignment')
 
 # Convert BGR to RGB for matplotlib display
 before_rgb = cv2.cvtColor(before, cv2.COLOR_BGR2RGB)
