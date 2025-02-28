@@ -23,8 +23,6 @@ def handle_client(client_socket):
                 break
             #Decode image
             image = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_COLOR)
-            #Convert the image to RGB
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             #Wait for the client to send the image name
             image_name = Server.get_response(client_socket)
             print(f"Received image: {image_name}")

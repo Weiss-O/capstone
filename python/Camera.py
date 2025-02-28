@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 import cv2
 import os
+import Server
 
 if os.environ.get('RPI', 'False').lower() == 'true':
     from picamera2 import Picamera2 #type:ignore
@@ -123,6 +124,20 @@ class PiCamera(Camera):
 
     def getDistortionMatrix(self):
         return self.camera_settings["distortion_matrix"]
+    
+    def capture_and_send_remote(self, client_socket, image_name): #TODO: There is probably a better place for this functionality
+        Server.send_bytes(client_socket, b'STORE_IMAGE')
+        
+        image = self.capture()
+        success, encoded_image = cv2.imencode('.jpg', image)
+        if not success:
+            raise Exception("Error encoding image")
+        image_bytes = encoded_image.tobytes()
+
+        Server.send_bytes(client_socket, image_bytes)
+
+        Server.send_bytes(client_socket, image_name.encode())
+
 
 
 class CameraReferenceFrame():

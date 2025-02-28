@@ -103,6 +103,19 @@ def handle_client(client_socket):
                 print(detections)
                 Server.send_detections(client_socket, detections)
 
+            elif command == b'STORE_IMAGE':
+                #Receive the image
+                image_bytes = Server.get_response(client_socket)
+                image = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_COLOR)
+                print(f"Received image of size {len(image_bytes)} bytes")
+
+                #Wait for the client to send the image name
+                image_name = Server.get_response(client_socket)
+                print(f"Received image: {image_name}")
+
+                #Save the image
+                cv2.imwrite(f"output/{image_name.decode()}.jpg", image)
+
             else:
                 print(f"Unknown command: {command}")
                 break

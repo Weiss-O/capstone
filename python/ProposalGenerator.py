@@ -76,19 +76,22 @@ class SSIMProposalGenerator(ProposalGenerator):
         proposals = []
 
         for c in contours:
-            rect = cv2.minAreaRect(c)
-            (x,y), (w,h), angle = rect
-            aspect_ratio = min(w,h)/max(w,h)
+            #Find contour area
+            area = cv2.contourArea(c)
+            if area > self.areaThreshold:
+                rect = cv2.minAreaRect(c)
+                (x,y), (w,h), angle = rect
+                aspect_ratio = min(w,h)/max(w,h)
 
-            if min(w, h) > 10 and max(w, h) < self.image_diagonal*0.8 and aspect_ratio > 0.15 and w*h > self.areaThreshold:
-                #Find point on detection area closest to centroid
-                point = CA.get_centroid_safe(c)
-                
-                #Create proposal object
-                proposal = Proposal(c, prompt=point)
+                if min(w, h) > 10 and max(w, h) < self.image_diagonal*0.8 and aspect_ratio > 0.15 and w*h > self.areaThreshold:
+                    #Find point on detection area closest to centroid
+                    point = CA.get_centroid_safe(c)
+                    
+                    #Create proposal object
+                    proposal = Proposal(c, prompt=point)
 
-                #Append proposal to list
-                proposals.append(proposal)
+                    #Append proposal to list
+                    proposals.append(proposal)
         
         print("# unfiltered proposals: ", len(proposals))
         return proposals
