@@ -53,7 +53,7 @@ class Occupied(State):
             try: 
                 point()
             except Exception as e:
-                print("Error: {e}")
+                print(f"Error: {e}")
                 teensy.home()
         PERSON_DETECTED, _ = scan()
         if PERSON_DETECTED:
@@ -139,10 +139,11 @@ def point(): #This is not the full functionality. The projection functionality n
         pointing_ray = camera.calculate_pointing_ray(obj.center_coordinate, degrees=True)
         theta_actual, phi_actual = teensy.point_camera(pointing_ray[0], pointing_ray[1])
         print(f"Pointed camera to ({theta_actual}, {phi_actual})")
-        if os.environ.get('SEND_OBJECT_PHOTOS', 'False').lower()== 'true':
-                camera.capture_and_send_remote(server, f"object_capture-{obj.center_coordinates}")
-
         time.sleep(1)
+        if os.environ.get('SEND_OBJECT_PHOTOS', 'False').lower()== 'true':
+                camera.capture_and_send_remote(server, f"object_capture-{obj.center_coordinate[0]}x{obj.center_coordinate[1]}y")
+
+        time.sleep(0.5)
         detectedObjects.remove(obj)
 
 #Main function
