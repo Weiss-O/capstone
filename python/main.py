@@ -50,7 +50,10 @@ class Occupied(State):
     def handle():
         global scanned_for_objects
         if(checkPointingConditions()):
-            point()
+            try: 
+                point()
+            except:
+                teensy.home()
         PERSON_DETECTED, _ = scan()
         if PERSON_DETECTED:
             print("Person Detected! Room Still Occupied")
@@ -129,14 +132,14 @@ def idle(t): #TODO: Look into whether this is the best thing to be doing in the 
     time.sleep(t)
 
 def point(): #This is not the full functionality. The projection functionality needs to be implemented. For now we will point the camera.
-    for i, obj in enumerate(detectedObjects[:]):  # Create a slice copy of the list
+    for obj in detectedObjects[:]:  # Create a slice copy of the list
         #TODO: There has to be a better way of doing this
         camera.update_ReferenceFrame(obj.camera_position[0], obj.camera_position[1]) #Update the camera theta_phi to be the ones used to capture the image containing the object
         pointing_ray = camera.calculate_pointing_ray(obj.center_coordinate, degrees=True)
         theta_actual, phi_actual = teensy.point_camera(pointing_ray[0], pointing_ray[1])
         print(f"Pointed camera to ({theta_actual}, {phi_actual})")
         if os.environ.get('SEND_OBJECT_PHOTOS', 'False').lower()== 'true':
-                camera.capture_and_send_remote(server, f"object_capture-{obj.POSID}-{i}")
+                camera.capture_and_send_remote(server, f"object_capture-{obj.center_coordinates}")
 
         time.sleep(1)
         detectedObjects.remove(obj)

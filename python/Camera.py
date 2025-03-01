@@ -120,7 +120,7 @@ class PiCamera(Camera):
         pointing_coord = self.reference_frame.estimate_theta_phi_abs(point)
         if degrees:
             pointing_coord = np.rad2deg(pointing_coord)
-        return self.reference_frame.estimate_theta_phi_abs(point)
+        return pointing_coord
 
     def getDistortionMatrix(self):
         return self.camera_settings["distortion_matrix"]
