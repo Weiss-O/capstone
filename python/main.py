@@ -52,7 +52,8 @@ class Occupied(State):
         if(checkPointingConditions()):
             try: 
                 point()
-            except:
+            except Exception as e:
+                print("Error: {e}")
                 teensy.home()
         PERSON_DETECTED, _ = scan()
         if PERSON_DETECTED:
