@@ -1,11 +1,13 @@
 #include "config.h"
-// #include communication.h
+#include "communication.h"
+#include "project.h"
+#include "stepper_point.h"
 
 void setup() {
   // put your setup code here, to run once:
   init_project();
   init_stepper();
-  Serial.begin(SERIAL_BAUD_RATE);
+  init_comms();
 
   // setup the fan pin
   pinMode(FAN_PIN, OUTPUT);

@@ -10,7 +10,8 @@ float y_y[N] = {0};  // Output buffer for y
 float u_y[N] = {0};  // Input buffer
 
 const float Ts = 1000; // sample time in micros
-const uint8_t minPWM = 0;
+const uint8_t minPWM = 2000;
+const int pwmMax = 32757;
 
 const float slope_y = 0.042372881;
 const float slope_x = 0.087336245;
@@ -18,7 +19,7 @@ const float offsetx = 3;
 const float offsety = 0;
 
 // controller coefficients
-float b[] = {3.405702, -3.398897};
+float b[] = {1.702851, -1.699449};
 float a = -0.740818;
 
 float b_center[] = {0.018275, -0.018272};
@@ -110,7 +111,7 @@ MirrorAngles get_mirror_angles(){
 float command_motors(int motor_pin1, int motor_pin2, float u) {
   // convert voltage to PWM
   float command = constrain(u, -5, 5);
-  command = command*(255/5);
+  command = command*(pwmMax/5);
 
   if (command > 0) {
     command += minPWM;
@@ -142,6 +143,8 @@ void init_project(){
 
   pinMode(GALVO_POS_X_R, INPUT);
   pinMode(GALVO_POS_Y_L, INPUT);
+  
+  analogWriteResolution(15);
 }
 
 // this is the main loop
