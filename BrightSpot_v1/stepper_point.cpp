@@ -7,7 +7,7 @@
 #define STEPPER_ACCEL 100
 
 const int stepsPerRevolution = 2048; // Steps for full rotation
-const int positionLimit = -55 // corresponds to 10 degrees past the limit switch (10/360)*2048
+const int positionLimit = -55; // corresponds to 10 degrees past the limit switch (10/360)*2048
 
 // Create two AccelStepper objects for tilt and pan motors
 AccelStepper tilt(STEPPER_TYPE, STEPPER_TILT_1, STEPPER_TILT_2, STEPPER_TILT_3, STEPPER_TILT_4); // Tilt motor
@@ -22,21 +22,21 @@ void init_stepper() {
   pan.setAcceleration(STEPPER_ACCEL);
 
   pinMode(SWITCH_TILT, INPUT);
-  pinMode(SWTICH_PAN, INPUT)
+  pinMode(SWITCH_PAN, INPUT);
 }
 
 bool home_stepper() {
   // switches closing causes the voltage to rise from gnd to 3.3v
-  pan.setSpeed(-STEPPER_SPEED)
+  pan.setSpeed(-STEPPER_SPEED);
   while(digitalRead(SWITCH_PAN) == LOW && pan.currentPosition() > positionLimit) {
     pan.runSpeed();
   }
   
   pan.setSpeed(0);
-  pan.setSpeed(STEPPER_SPEED)
+  pan.setSpeed(STEPPER_SPEED);
   
   if (pan.currentPosition()  <= positionLimit) {
-    return false
+    return false;
   }
 
   else {
