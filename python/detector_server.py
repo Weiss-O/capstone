@@ -31,7 +31,7 @@ def create_detector(baseline_image):
                                                         baseline=baseline_image)
 
     proposal_generator = PG.SSIMProposalGenerator(baseline=baseline_image,
-                                                    areaThreshold=10000)
+                                                    areaThreshold=8000)
     detector = Detector.BasicDetector(baseline=baseline_image,
                                         proposal_generator=proposal_generator,
                                         classifier=classifier)
