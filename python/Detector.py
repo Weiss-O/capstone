@@ -38,7 +38,7 @@ class BasicDetector(Detector):
 
     #Function to take in image and generate list of objects
     def detect(self, imageObj, **kwargs) -> list:
-        proposals, warped_image = self.proposal_generator.generateProposals(imageObj, warp=True)
+        proposals, imageObj = self.proposal_generator.generateProposals(imageObj, warp=True)
         detections = self.classifier.classify(imageObj, proposals)
         self._mergeDetections(detections)
 

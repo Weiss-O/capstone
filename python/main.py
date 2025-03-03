@@ -56,6 +56,11 @@ class Occupied(State):
                 print(f"Error: {e}")
                 teensy.home()
         PERSON_DETECTED, _ = scan()
+
+        if os.environ.get('PD', 'Auto').lower()== 'manual':
+            PD = input("Is there a person in the room? (Y/n)")
+            PERSON_DETECTED = PD == "Y"
+
         if PERSON_DETECTED:
             print("Person Detected! Room Still Occupied")
             return DeviceState.OCCUPIED
