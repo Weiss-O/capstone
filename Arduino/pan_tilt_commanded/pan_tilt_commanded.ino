@@ -48,7 +48,7 @@ void loop() {
         tilt.run();
       }
 
-      Serial.println("Successfully moved to position");
+      Serial.println("SUCCESS");
     }
   } else if (command[0] == 'Z') {
     // 'Z' (Zero) command: Set current position to 0
@@ -61,7 +61,7 @@ void loop() {
       pan.setCurrentPosition(0);
       tilt.setCurrentPosition(0);
     }
-    Serial.println("Motor set to zero");
+    Serial.println("SUCCESS");
   } else if (command[0] == 'H') {
     // 'H' (Home) command: Move motors to home (position 0)
     int motorCode = command.substring(1).toInt();
@@ -85,11 +85,17 @@ void loop() {
         tilt.run();
       }
     }
-    Serial.println("Homed motor(s)");
+    Serial.println("SUCCESS");
   } else if (command[0] == 'S') {
     // 'S' (Stop) command: Stop both motors
     pan.stop();
     tilt.stop();
-    Serial.println("Motors Stopped");
+    Serial.println("SUCCESS");
+  } else if (command[0] == 'S'){
+    int space1 = command.indexOf(' ');          // First space
+    int space2 = command.indexOf(' ', space1 + 1); // Second space
+    int space3 = command.indexOf(' ', space2 + 1); // Third space
+
+    Serial.println("SUCCESS")
   }
 }

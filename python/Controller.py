@@ -60,11 +60,21 @@ class Controller():
         self.current_position = [theta_steps, phi_steps]
 
     #projects a cone. alpha and beta are in degrees
-    def project_cone(self, alpha, beta):
-        alpha_int = np.round(alpha*256/(self.settings["projector_ROM"]))
-        beta_int = np.round(beta*256/(self.settings["projector_ROM"]))
+    def project_cone(self, alpha, beta, freq=15, duration = 3):
+        """
+        Sends command to the controller to project a cone with the given alpha and beta angles
+        alpha and beta should be less than the range of motion of the projector
+        Command sent: L 
+        """
+        
+        alpha_int = int(alpha*255/(self.settings["projector_ROM"]["alpha"]))
+        beta_int = int(beta*255/(self.settings["projector_ROM"]["beta"]))
 
-        command = CommandGenerator.generate_cone_command(alpha_int, beta_int)
+        if alpha_int > 255 or beta_int > 255:
+            return Exception(f"Alpha and Beta must be less than {self.settings['projector_ROM']['alpha']} and {self.settings['projector_ROM']['beta']} respectively")
+
+        amp = max(alpha_int, beta_int)
+        command = CommandGenerator.generate_cone_command(alpha_int, freq, duration)
         self.ser.write(command.encode())
         self.ser.flush()
 
@@ -121,8 +131,8 @@ class CommandGenerator():
     def generate_point_command(theta_steps, phi_steps):
         return f"P {theta_steps} {phi_steps}\n"
         
-    def generate_cone_command(alpha_int, beta_int):
-        return f"C {alpha_int} {beta_int}\n"
+    def generate_cone_command(mag_int, freq_int, dur_int):
+        return f"L {mag_int} {freq_int} {dur_int}\n"
     
     HOME_COMMAND = "H2\n"
     ZERO_COMMAND = "Z2\n"
