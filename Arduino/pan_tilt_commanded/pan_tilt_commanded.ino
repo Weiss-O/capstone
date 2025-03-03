@@ -91,11 +91,11 @@ void loop() {
     pan.stop();
     tilt.stop();
     Serial.println("SUCCESS");
-  } else if (command[0] == 'S'){
+  } else if (command[0] == 'L'){
     int space1 = command.indexOf(' ');          // First space
     int space2 = command.indexOf(' ', space1 + 1); // Second space
     int space3 = command.indexOf(' ', space2 + 1); // Third space
 
-    Serial.println("SUCCESS")
+    Serial.println("SUCCESS");
   }
 }

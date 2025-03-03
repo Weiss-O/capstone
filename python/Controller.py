@@ -83,6 +83,7 @@ class Controller():
             pass
         response = self.ser.readline().decode('utf-8').rstrip()
         #Check if positionining was successful
+        print(response)
         if response != "SUCCESS":
             return Exception(f"Projection Error")
     
