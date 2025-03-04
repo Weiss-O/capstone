@@ -2,9 +2,9 @@
 #include "config.h"
 #include <Arduino.h>
 
-#define N 2
-float y_x[N] = {0};  // Output buffer for x
-float u_x[N] = {0};  // Input buffer
+#define N 3
+float y_x[N] = {1};  // Output buffer for x
+float u_x[N] = {1};  // Input buffer
 
 float y_y[N] = {0};  // Output buffer for y
 float u_y[N] = {0};  // Input buffer
@@ -14,16 +14,16 @@ const uint8_t minPWM = 500;
 const int pwmMax = 32757;
 const int threshold = 200;
 
-const float slope_y = 0.104448743;
-const float slope_x = 0.241071429;
-const float offsetx = -120;
-const float offsety = -51;
+const float slope_y = 0.135;
+const float slope_x = 0.282722513;
+const float offsetx = -28;
+const float offsety = -66;
 
 // controller coefficients
-float b[] = {1.702851, -1.699449};
+float b[] = {34.057017, -33.988971};
 float a = -0.740818;
 
-float b_center[] = {0.018275, -0.018272};
+float b_center[] = {0.182747, -0.182715};
 
 float circle_control(float u_new, bool is_x) {
   if (is_x) {
@@ -55,12 +55,15 @@ float circle_control(float u_new, bool is_x) {
 }
 
 bool center_mirrors(float threshold_error) {
+  Serial.println("centering started");
   int start_time = micros();
-  while (u_x[0] > threshold_error || u_y[0] > threshold_error) {
+  while (abs(u_x[0]) > threshold_error || abs(u_y[0]) > threshold_error) {
     int loop_start = micros();
 
     // check if we've timed out
-    if (loop_start - start_time > 5000000){
+    if (loop_start - start_time > 20000000){
+      command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, 0);
+      command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, 0);
       return false;
     }
 
@@ -73,6 +76,11 @@ bool center_mirrors(float threshold_error) {
     float error_y = (0 - mirrorAngley)*(3.14159/180);
 
     // Shift previous inputs and outputs
+    u_x[2] = u_x[1];
+    u_y[2] = u_y[1];
+    y_x[2] = y_x[1];
+    y_y[2] = y_y[1];
+
     u_x[1] = u_x[0];
     u_y[1] = u_y[0];
     y_x[1] = y_x[0];
@@ -83,16 +91,27 @@ bool center_mirrors(float threshold_error) {
 
     // Compute output using the difference equation
     y_y[0] = b_center[0]*u_y[0] + b_center[1]*u_y[1] + y_y[1];
-    y_x[0] = b_center[0]*u_x[0] + b_center[1]*u_x[1] + y_y[1];
+    y_x[0] = 0.01288*u_x[1] - 0.01182*u_x[2] + 1.6*y_x[1] - 0.64*y_x[2];
 
     float pwm_x = command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, y_x[0]);
     float pwm_y = command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, y_y[0]);
+
+    Serial.print(mirrorAnglex);
+    Serial.print(",");
+    Serial.println(pwm_x);
 
     int loop_end = micros();
     int delay_time  = Ts - (loop_end - loop_start);
     delayMicroseconds(delay_time);
 
   }
+  command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, 0);
+  command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, 0);
+
+  Serial.print(u_x[0]);
+  Serial.print(",");
+  Serial.println(u_y[0]);
+  Serial.println("centering completed");
   return true;
 }
 
@@ -112,15 +131,15 @@ MirrorAngles get_mirror_angles(){
 float command_motors(int motor_pin1, int motor_pin2, float u) {
   // convert voltage to PWM
   float command = constrain(u, -5.0, 5.0);
-  command = command*(pwmMax/5.0);
+  command = command*(float(pwmMax)/5.0);
 
-  if (command > 0) {
+  if (command > threshold) {
     command += minPWM;
     analogWrite(motor_pin1, command);
     digitalWrite(motor_pin2, LOW);
   }
 
-  else if (command < 0) {
+  else if (command < threshold) {
     command -= minPWM;
     analogWrite(motor_pin2, abs(command));
     digitalWrite(motor_pin1, LOW);
@@ -165,6 +184,10 @@ bool project_circle(int duration, float magnitude, float frequency) {
   // step to zero
   bool start_status = 0;
   start_status = center_mirrors(0.05);
+
+  if (!start_status) {
+    return false;
+  }
 
   // clear the buffers
   u_x[0] = 0;
@@ -217,26 +240,27 @@ bool project_circle(int duration, float magnitude, float frequency) {
     int loop_end = micros();
     int delay_time  = Ts - (loop_end - loop_start);
     delayMicroseconds(delay_time);
-    if (loop_start % 5000 < 100) {
-      Serial.print(tableIndex);
-      Serial.print(",");
+    if (loop_start % 500 < 100) {
+      // Serial.print(tableIndex);
+      // Serial.print(",");
       Serial.print(mirrorAnglex);
       Serial.print(",");
       Serial.print(refAnglex);
       Serial.print(",");
-      Serial.println(command_x);
+      Serial.println(pwm_x);
     }
   }
-  bool end_status = center_mirrors(0.05);
+
   digitalWrite(LASER_PIN, LOW);
+  bool end_status = center_mirrors(0.05);
   
   // clear the buffers
-  u_x[0] = 0;
+  u_x[0] = 1;
   u_x[1] = 0;
   y_x[0] = 0;
   y_x[1] = 0;
 
-  u_y[0] = 0;
+  u_y[0] = 1;
   u_y[1] = 0;
   y_y[0] = 0;
   y_y[1] = 0;
