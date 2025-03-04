@@ -22,6 +22,11 @@ void pi_communications(String command) {
       int panSteps = command.substring(space1 + 1, space2).toInt();
       int tiltSteps = command.substring(space2 + 1).toInt();
 
+      Serial.print("echo stepper, ");
+      Serial.print(panSteps);
+      Serial.print(", ");
+      Serial.println(tiltSteps);
+
       if (point_steppers(tiltSteps, panSteps)) {
         Serial.println("S");
       }
@@ -44,8 +49,16 @@ void pi_communications(String command) {
     if (space1 != -1 && space2 != -1 && space3 != -1) {
       // Extract step values for pan and tilt
       int duration = command.substring(space1 + 1, space2).toInt();
-      int magnitude = command.substring(space2 + 1, space3).toInt();
+      float magnitude = command.substring(space2 + 1, space3).toInt();
+      magnitude = map(magnitude, 0.0, 255.0, 0.0, 10.0);
       int frequency = command.substring(space3 + 1).toInt();
+
+      Serial.print("echo project, ");
+      Serial.print(duration);
+      Serial.print(", ");
+      Serial.print(magnitude);
+      Serial.print(", ");
+      Serial.println(frequency);
 
       if (project_circle(duration, magnitude, frequency)) {
         Serial.println("S");
@@ -62,6 +75,7 @@ void pi_communications(String command) {
 
   else if (commandChar == 'H') {
     // call the homing function
+    Serial.println("echo homing");
     if(home_stepper()) {
       Serial.println("S");
     }

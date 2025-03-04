@@ -10,13 +10,14 @@ float y_y[N] = {0};  // Output buffer for y
 float u_y[N] = {0};  // Input buffer
 
 const float Ts = 1000; // sample time in micros
-const uint8_t minPWM = 2000;
+const uint8_t minPWM = 500;
 const int pwmMax = 32757;
+const int threshold = 200;
 
-const float slope_y = 0.042372881;
-const float slope_x = 0.087336245;
-const float offsetx = 3;
-const float offsety = 0;
+const float slope_y = 0.104448743;
+const float slope_x = 0.241071429;
+const float offsetx = -120;
+const float offsety = -51;
 
 // controller coefficients
 float b[] = {1.702851, -1.699449};
@@ -98,8 +99,8 @@ bool center_mirrors(float threshold_error) {
 MirrorAngles get_mirror_angles(){
   MirrorAngles angles;
   // read the ADCs
-  int x_voltage = analogRead(GALVO_POS_X_R);
-  int y_voltage = analogRead(GALVO_POS_Y_L);
+  int x_voltage = analogRead(GALVO_POS_X_L);
+  int y_voltage = analogRead(GALVO_POS_Y_R);
 
   // transform to angle
   angles.anglex = slope_x*x_voltage + offsetx;
@@ -110,8 +111,8 @@ MirrorAngles get_mirror_angles(){
 
 float command_motors(int motor_pin1, int motor_pin2, float u) {
   // convert voltage to PWM
-  float command = constrain(u, -5, 5);
-  command = command*(pwmMax/5);
+  float command = constrain(u, -5.0, 5.0);
+  command = command*(pwmMax/5.0);
 
   if (command > 0) {
     command += minPWM;
@@ -157,7 +158,7 @@ bool project_circle(int duration, float magnitude, float frequency) {
 
   // create lookup table
   for (int i = 0; i < tableSize; i++) {
-    float angle = (2.0 * PI * i) / tableSize;  // Angle in radians
+    float angle = (2.0 * PI * float(i)) / tableSize;  // Angle in radians
     sineLookup[i] = magnitude * sin(angle);  // Scaled by amplitude
   }
 
@@ -176,18 +177,14 @@ bool project_circle(int duration, float magnitude, float frequency) {
   y_y[0] = 0;
   y_y[1] = 0;
   
-  uint16_t num_cycles = 100000*duration/Ts;
-  int start_time = 0;
+  int num_cycles = 1000000*duration/Ts;
+  int start_time = micros();
 
   digitalWrite(LASER_PIN, HIGH);
 
   // repeat for the appropriate number of cycles
   for (int i=0; i<=num_cycles; i++) {
     int loop_start = micros();
-
-    MirrorAngles angles = get_mirror_angles();
-    float mirrorAnglex = angles.anglex;
-    float mirrorAngley = angles.angley;
 
     // Get the reference angle from the lookup table
     unsigned long timeInCycle = (loop_start-start_time) % period_us;  // Time within one period
@@ -201,6 +198,10 @@ bool project_circle(int duration, float magnitude, float frequency) {
     else {
       refAngley = sineLookup[tableIndex-270];
     }
+
+    MirrorAngles angles = get_mirror_angles();
+    float mirrorAnglex = angles.anglex;
+    float mirrorAngley = angles.angley;
 
     // calculate error in radians (controller deals in radians)
     float error_x = (refAnglex - mirrorAnglex)*(3.14159/180);
@@ -216,10 +217,19 @@ bool project_circle(int duration, float magnitude, float frequency) {
     int loop_end = micros();
     int delay_time  = Ts - (loop_end - loop_start);
     delayMicroseconds(delay_time);
+    if (loop_start % 5000 < 100) {
+      Serial.print(tableIndex);
+      Serial.print(",");
+      Serial.print(mirrorAnglex);
+      Serial.print(",");
+      Serial.print(refAnglex);
+      Serial.print(",");
+      Serial.println(command_x);
+    }
   }
-
+  bool end_status = center_mirrors(0.05);
   digitalWrite(LASER_PIN, LOW);
-
+  
   // clear the buffers
   u_x[0] = 0;
   u_x[1] = 0;
