@@ -10,13 +10,13 @@ float y_y[N] = {0};  // Output buffer for y
 float u_y[N] = {0};  // Input buffer
 
 const float Ts = 1000; // sample time in micros
-const uint8_t minPWM = 500;
+const int minPWM = 2000;
 const int pwmMax = 32757;
-const int threshold = 200;
+const int threshold = 100;
 
 const float slope_y = 0.135;
 const float slope_x = 0.282722513;
-const float offsetx = -28;
+const float offsetx = -34;
 const float offsety = -66;
 
 // controller coefficients
@@ -62,8 +62,8 @@ bool center_mirrors(float threshold_error) {
 
     // check if we've timed out
     if (loop_start - start_time > 20000000){
-      command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, 0);
-      command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, 0);
+      command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, 0.0);
+      command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, 0.0);
       return false;
     }
 
@@ -91,11 +91,13 @@ bool center_mirrors(float threshold_error) {
 
     // Compute output using the difference equation
     y_y[0] = b_center[0]*u_y[0] + b_center[1]*u_y[1] + y_y[1];
-    y_x[0] = 0.01288*u_x[1] - 0.01182*u_x[2] + 1.6*y_x[1] - 0.64*y_x[2];
+    y_x[0] = 0.034490*u_x[1] - 0.033389*u_x[2] + 1.818731*y_x[1] - 0.818731*y_x[2];
 
     float pwm_x = command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, y_x[0]);
     float pwm_y = command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, y_y[0]);
 
+    Serial.print(loop_start);
+    Serial.print(",");
     Serial.print(mirrorAnglex);
     Serial.print(",");
     Serial.println(pwm_x);
@@ -105,8 +107,8 @@ bool center_mirrors(float threshold_error) {
     delayMicroseconds(delay_time);
 
   }
-  command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, 0);
-  command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, 0);
+  command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, 0.0);
+  command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, 0.0);
 
   Serial.print(u_x[0]);
   Serial.print(",");
@@ -139,7 +141,7 @@ float command_motors(int motor_pin1, int motor_pin2, float u) {
     digitalWrite(motor_pin2, LOW);
   }
 
-  else if (command < threshold) {
+  else if (command < -threshold) {
     command -= minPWM;
     analogWrite(motor_pin2, abs(command));
     digitalWrite(motor_pin1, LOW);
@@ -152,19 +154,6 @@ float command_motors(int motor_pin1, int motor_pin2, float u) {
 
   return command;
   
-}
-
-void init_project(){
-  pinMode(GALVO_MOTOR_X1, OUTPUT);
-  pinMode(GALVO_MOTOR_X2, OUTPUT);
-  pinMode(GALVO_MOTOR_Y1, OUTPUT);
-  pinMode(GALVO_MOTOR_Y2, OUTPUT);
-  pinMode(LASER_PIN, OUTPUT);
-
-  pinMode(GALVO_POS_X_R, INPUT);
-  pinMode(GALVO_POS_Y_L, INPUT);
-  
-  analogWriteResolution(15);
 }
 
 // this is the main loop
@@ -267,4 +256,17 @@ bool project_circle(int duration, float magnitude, float frequency) {
   
   return true;
 
+}
+
+void init_project(){
+  pinMode(GALVO_MOTOR_X1, OUTPUT);
+  pinMode(GALVO_MOTOR_X2, OUTPUT);
+  pinMode(GALVO_MOTOR_Y1, OUTPUT);
+  pinMode(GALVO_MOTOR_Y2, OUTPUT);
+  pinMode(LASER_PIN, OUTPUT);
+
+  pinMode(GALVO_POS_X_R, INPUT);
+  pinMode(GALVO_POS_Y_L, INPUT);
+  
+  analogWriteResolution(15);
 }
