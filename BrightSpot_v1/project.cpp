@@ -9,6 +9,20 @@ float u_x[N] = {1};  // Input buffer
 float y_y[N] = {0};  // Output buffer for y
 float u_y[N] = {0};  // Input buffer
 
+const float kp = 1.0;
+const float ki = 0.0;
+const float kd = 0.0;
+
+const float kp_c = 1.0;
+const float ki_c = 0.0;
+const float kd_c = 0.0;
+
+float sumErr_x = 0.0;
+float e_prev_x = 0.0;
+
+float sumErr_y = 0.0;
+float e_prev_y = 0.0;
+
 const float Ts = 1000; // sample time in micros
 const int minPWM = 2000;
 const int pwmMax = 32757;
@@ -24,6 +38,75 @@ float b[] = {34.057017, -33.988971};
 float a = -0.740818;
 
 float b_center[] = {0.182747, -0.182715};
+
+float circle_control_PID(float e_new, bool is_x) {
+  if (iz_x) {
+    sumErr_x += e_new * Ts;
+    float dErr = (e_new - e_prev_x)/Ts;
+    e_prev_x = e_new;
+    return kp * e_new + ki * sumErr + kd * dErr;
+  }
+
+  else {
+    sumErr_y += e_new * Ts;
+    float dErr = (e_new - e_prev_y)/Ts;
+    e_prev_y = e_new;
+    return kp * e_new + ki * sumErr + kd * dErr;
+  }
+}
+
+bool center_mirrors_PID(float threshold_error) {
+  int start_time = micros();
+  while (abs(e_prev_x) > threshold_error || abs(e_prev_y) > threshold_error) {
+    int loop_start = micros();
+
+    // check if we've timed out
+    if (loop_start - start_time > 20000000){
+      command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, 0.0);
+      command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, 0.0);
+      return false;
+    }
+
+    MirrorAngles test = get_mirror_angles();
+    float mirrorAnglex = test.anglex;
+    float mirrorAngley = test.angley;
+
+    // calculate error
+    float error_x = (0 - mirrorAnglex)*(3.14159/180);
+    float error_y = (0 - mirrorAngley)*(3.14159/180);
+
+    sumErr_y += error_y * Ts;
+    sumErr_x += error_x * Ts;
+
+    float dErr_x = (error_x - e_prev_x)/Ts;
+    float dErr_y = (error_y - e_prev_y)/Ts;
+
+    // apply PID loop
+    float command_x = kp * error_x + ki * sumErr_x + kd * dErr_x;
+    float command_y = kp * error_y + ki * sumErr_y + kd * dErr_y;
+
+    float pwm_x = command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, command_x);
+    float pwm_y = command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, command_y);
+
+    // shift enew to eprev
+    e_prev_y = error_y;
+    e_prev_x = error_x;
+
+    int loop_end = micros();
+    int delay_time  = Ts - (loop_end - loop_start);
+    delayMicroseconds(delay_time);
+  }
+
+  // reset the error and error sum terms
+  e_prev_y = 0;
+  e_prev_x = 0;
+  sumErr_y = 0;
+  sumErr_x = 0;
+
+  command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, 0.0);
+  command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, 0.0);
+  return true;
+}
 
 float circle_control(float u_new, bool is_x) {
   if (is_x) {
@@ -91,7 +174,7 @@ bool center_mirrors(float threshold_error) {
 
     // Compute output using the difference equation
     y_y[0] = b_center[0]*u_y[0] + b_center[1]*u_y[1] + y_y[1];
-    y_x[0] = 0.034490*u_x[1] - 0.033389*u_x[2] + 1.818731*y_x[1] - 0.818731*y_x[2];
+    y_x[0] = 0.0*u_x[0] - 0.021124*u_x[1] - 0*u_x[2] + 0*y_x[1] - 0.0*y_x[2];
 
     float pwm_x = command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, y_x[0]);
     float pwm_y = command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, y_y[0]);
@@ -172,7 +255,7 @@ bool project_circle(int duration, float magnitude, float frequency) {
 
   // step to zero
   bool start_status = 0;
-  start_status = center_mirrors(0.05);
+  start_status = center_mirrors_PID(0.05);
 
   if (!start_status) {
     return false;
@@ -220,8 +303,8 @@ bool project_circle(int duration, float magnitude, float frequency) {
     float error_y = (refAngley - mirrorAngley)*(3.14159/180);
 
     // calculate command
-    float command_x = circle_control(error_x, true);
-    float command_y = circle_control(error_y, false);
+    float command_x = circle_control_PID(error_x, true);
+    float command_y = circle_control_PID(error_y, false);
 
     float pwm_x = command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, command_x);
     float pwm_y = command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, command_y);
