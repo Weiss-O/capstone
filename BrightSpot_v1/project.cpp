@@ -25,15 +25,67 @@ const int minPWM = 2000;
 const int pwmMax = 32757;
 const int threshold = 200;
 
-const float max_y = 732.0;
-const float min_y = 282.0;
-const float max_x = 600.0;
-const float min_x = 385.0;
+float max_y = 732.0;
+float min_y = 282.0;
+float max_x = 600.0;
+float min_x = 385.0;
 
-const float slope_y = 54.0/(max_y - min_y);
-const float slope_x = 54.0/(max_x - min_x);
-const float offsetx = -27 - (slope_x*min_x)+6;
-const float offsety = -27 - (slope_y*min_y);
+float slope_y = 54.0/(max_y - min_y);
+float slope_x = 54.0/(max_x - min_x);
+float offsetx = -27 - (slope_x*min_x)+6;
+float offsety = -27 - (slope_y*min_y);
+
+void calibrate_galvo(){
+  int commandSpeed = 4000;
+  // write motors to 3000 in one direction
+  command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, commandSpeed);
+  command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, commandSpeed);
+
+  // hold for one second
+  delay(1000);
+  // record the value here
+  Serial.println("recording");
+  float x1 = analogRead(GALVO_POS_X_R);
+  float y1 = analogRead(GALVO_POS_Y_R);
+
+  // write motors to 3000 in one direction
+  command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, 0);
+  command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, 0);
+
+  delay(1000);
+
+  // write motors to 3000 in other direction
+  command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, -commandSpeed);
+  command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, -commandSpeed);
+
+  // hold for one second
+  delay(1000);
+
+  // record the value here
+  Serial.println("recording");
+  float x2 = analogRead(GALVO_POS_X_R);
+  float y2 = analogRead(GALVO_POS_Y_R);
+
+  command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, 0);
+  command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, 0);
+
+  // check each one to see what is larger and what is smaller
+  if (x2 > x1) {max_x = x2; min_x = x1;}
+  else {max_x = x1; min_x = x2;}
+  if (y2 > y1) {max_y = y2; min_y = y1;}
+  else {max_y = y1; min_y = y2;}
+
+  Serial.print("max_x: ");
+  Serial.print(max_x);
+  Serial.print(" min_x: ");
+  Serial.print(min_x);
+  Serial.print(" max_y: ");
+  Serial.print(max_y);
+  Serial.print(" min_y: ");
+  Serial.println(min_y);
+
+  return;
+}
 
 float circle_control_PID(float e_new, bool is_x) {
   if (is_x) {
@@ -129,7 +181,6 @@ MirrorAngles get_mirror_angles(){
 float command_motors(int motor_pin1, int motor_pin2, float u) {
   // convert voltage to PWM
   float command = constrain(u, -pwmMax, pwmMax);
-  command = u;
 
   if (command > threshold) {
     command += minPWM;
