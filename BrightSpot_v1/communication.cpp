@@ -22,10 +22,10 @@ void pi_communications(String command) {
       int panSteps = command.substring(space1 + 1, space2).toInt();
       int tiltSteps = command.substring(space2 + 1).toInt();
 
-      Serial.print("echo stepper, ");
-      Serial.print(panSteps);
-      Serial.print(", ");
-      Serial.println(tiltSteps);
+      // Serial.print("echo stepper, ");
+      // Serial.print(panSteps);
+      // Serial.print(", ");
+      // Serial.println(tiltSteps);
 
       if (point_steppers(tiltSteps, panSteps)) {
         Serial.println("S");

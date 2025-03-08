@@ -5,9 +5,9 @@
 
 void setup() {
   // put your setup code here, to run once:
+  init_comms();
   init_project();
   init_stepper();
-  init_comms();
 
   // setup the fan pin
   pinMode(FAN_PIN, OUTPUT);

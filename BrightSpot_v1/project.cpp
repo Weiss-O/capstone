@@ -2,19 +2,16 @@
 #include "config.h"
 #include <Arduino.h>
 
-#define N 3
-float y_x[N] = {1};  // Output buffer for x
-float u_x[N] = {1};  // Input buffer
+const float kp_x = 200.0;
+const float ki_x = 0.1;
+const float kd_x = 100;
 
-float y_y[N] = {0};  // Output buffer for y
-float u_y[N] = {0};  // Input buffer
+const float kp_y = 600.0;
+const float ki_y = 0.1;
+const float kd_y = 150;
 
-const float kp = 1.0;
-const float ki = 0.0;
-const float kd = 0.0;
-
-const float kp_c = 1.0;
-const float ki_c = 0.0;
+const float kp_c = 100;
+const float ki_c = 1;
 const float kd_c = 0.0;
 
 float sumErr_x = 0.0;
@@ -23,41 +20,42 @@ float e_prev_x = 0.0;
 float sumErr_y = 0.0;
 float e_prev_y = 0.0;
 
-const float Ts = 1000; // sample time in micros
+const float Ts = 500; // sample time in micros
 const int minPWM = 2000;
 const int pwmMax = 32757;
-const int threshold = 100;
+const int threshold = 200;
 
-const float slope_y = 0.135;
-const float slope_x = 0.282722513;
-const float offsetx = -34;
-const float offsety = -66;
+const float max_y = 732.0;
+const float min_y = 282.0;
+const float max_x = 600.0;
+const float min_x = 385.0;
 
-// controller coefficients
-float b[] = {34.057017, -33.988971};
-float a = -0.740818;
-
-float b_center[] = {0.182747, -0.182715};
+const float slope_y = 54.0/(max_y - min_y);
+const float slope_x = 54.0/(max_x - min_x);
+const float offsetx = -27 - (slope_x*min_x)+6;
+const float offsety = -27 - (slope_y*min_y);
 
 float circle_control_PID(float e_new, bool is_x) {
-  if (iz_x) {
-    sumErr_x += e_new * Ts;
+  if (is_x) {
+    sumErr_x += e_new;
     float dErr = (e_new - e_prev_x)/Ts;
     e_prev_x = e_new;
-    return kp * e_new + ki * sumErr + kd * dErr;
+    return kp_x * e_new + ki_x * sumErr_x + kd_x * dErr;
   }
 
   else {
-    sumErr_y += e_new * Ts;
+    sumErr_y += e_new;
     float dErr = (e_new - e_prev_y)/Ts;
     e_prev_y = e_new;
-    return kp * e_new + ki * sumErr + kd * dErr;
+    return kp_y * e_new + ki_y * sumErr_y + kd_y * dErr;
   }
 }
 
 bool center_mirrors_PID(float threshold_error) {
+  // Serial.println("centering started");
   int start_time = micros();
-  while (abs(e_prev_x) > threshold_error || abs(e_prev_y) > threshold_error) {
+
+  do {
     int loop_start = micros();
 
     // check if we've timed out
@@ -72,18 +70,18 @@ bool center_mirrors_PID(float threshold_error) {
     float mirrorAngley = test.angley;
 
     // calculate error
-    float error_x = (0 - mirrorAnglex)*(3.14159/180);
-    float error_y = (0 - mirrorAngley)*(3.14159/180);
+    float error_x = (0.0 - mirrorAnglex);
+    float error_y = (0.0 - mirrorAngley);
 
-    sumErr_y += error_y * Ts;
-    sumErr_x += error_x * Ts;
+    sumErr_y += error_y;
+    sumErr_x += error_x;
 
     float dErr_x = (error_x - e_prev_x)/Ts;
     float dErr_y = (error_y - e_prev_y)/Ts;
 
     // apply PID loop
-    float command_x = kp * error_x + ki * sumErr_x + kd * dErr_x;
-    float command_y = kp * error_y + ki * sumErr_y + kd * dErr_y;
+    float command_x = kp_c * error_x + ki_c * sumErr_x + kd_c * dErr_x;
+    float command_y = kp_c * error_y + ki_c * sumErr_y + kd_c * dErr_y;
 
     float pwm_x = command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, command_x);
     float pwm_y = command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, command_y);
@@ -92,10 +90,14 @@ bool center_mirrors_PID(float threshold_error) {
     e_prev_y = error_y;
     e_prev_x = error_x;
 
+    // Serial.print(mirrorAnglex);
+    // Serial.print(",");
+    // Serial.println(pwm_x);
+
     int loop_end = micros();
     int delay_time  = Ts - (loop_end - loop_start);
     delayMicroseconds(delay_time);
-  }
+  } while (abs(e_prev_x) > threshold_error || abs(e_prev_y) > threshold_error);
 
   // reset the error and error sum terms
   e_prev_y = 0;
@@ -103,107 +105,18 @@ bool center_mirrors_PID(float threshold_error) {
   sumErr_y = 0;
   sumErr_x = 0;
 
-  command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, 0.0);
-  command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, 0.0);
-  return true;
-}
-
-float circle_control(float u_new, bool is_x) {
-  if (is_x) {
-    // Shift previous inputs and outputs
-    u_x[1] = u_x[0];
-    y_x[1] = y_x[0];
-
-    u_x[0] = u_new;  // Store the new input
-
-    // Compute output using the difference equation
-    y_x[0] = b[0]*u_x[0] + b[1]*u_x[1] - a*y_x[1];
-
-    return y_x[0];  // Return the new control output
-  }
-
-  else{
-    // Shift previous inputs and outputs
-    u_y[1] = u_y[0];
-    y_y[1] = y_y[0];
-
-    u_y[0] = u_new;  // Store the new input
-
-    // Compute output using the difference equation
-    y_y[0] = b[0]*u_y[0] + b[1]*u_y[1] - a*y_y[1];
-
-    return y_y[0];  // Return the new control output
-  }
-
-}
-
-bool center_mirrors(float threshold_error) {
-  Serial.println("centering started");
-  int start_time = micros();
-  while (abs(u_x[0]) > threshold_error || abs(u_y[0]) > threshold_error) {
-    int loop_start = micros();
-
-    // check if we've timed out
-    if (loop_start - start_time > 20000000){
-      command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, 0.0);
-      command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, 0.0);
-      return false;
-    }
-
-    MirrorAngles test = get_mirror_angles();
-    float mirrorAnglex = test.anglex;
-    float mirrorAngley = test.angley;
-
-    // calculate error
-    float error_x = (0 - mirrorAnglex)*(3.14159/180);
-    float error_y = (0 - mirrorAngley)*(3.14159/180);
-
-    // Shift previous inputs and outputs
-    u_x[2] = u_x[1];
-    u_y[2] = u_y[1];
-    y_x[2] = y_x[1];
-    y_y[2] = y_y[1];
-
-    u_x[1] = u_x[0];
-    u_y[1] = u_y[0];
-    y_x[1] = y_x[0];
-    y_y[1] = y_y[0];
-
-    u_x[0] = error_x;  // Store the new input
-    u_y[0] = error_y;  // Store the new input
-
-    // Compute output using the difference equation
-    y_y[0] = b_center[0]*u_y[0] + b_center[1]*u_y[1] + y_y[1];
-    y_x[0] = 0.0*u_x[0] - 0.021124*u_x[1] - 0*u_x[2] + 0*y_x[1] - 0.0*y_x[2];
-
-    float pwm_x = command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, y_x[0]);
-    float pwm_y = command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, y_y[0]);
-
-    Serial.print(loop_start);
-    Serial.print(",");
-    Serial.print(mirrorAnglex);
-    Serial.print(",");
-    Serial.println(pwm_x);
-
-    int loop_end = micros();
-    int delay_time  = Ts - (loop_end - loop_start);
-    delayMicroseconds(delay_time);
-
-  }
-  command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, 0.0);
-  command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, 0.0);
-
-  Serial.print(u_x[0]);
-  Serial.print(",");
-  Serial.println(u_y[0]);
-  Serial.println("centering completed");
+  command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, 0);
+  command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, 0);
+  delay(2000);
+  command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, 0);
+  command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, 0);
   return true;
 }
 
 MirrorAngles get_mirror_angles(){
   MirrorAngles angles;
   // read the ADCs
-  int x_voltage = analogRead(GALVO_POS_X_L);
+  int x_voltage = analogRead(GALVO_POS_X_R);
   int y_voltage = analogRead(GALVO_POS_Y_R);
 
   // transform to angle
@@ -215,8 +128,8 @@ MirrorAngles get_mirror_angles(){
 
 float command_motors(int motor_pin1, int motor_pin2, float u) {
   // convert voltage to PWM
-  float command = constrain(u, -5.0, 5.0);
-  command = command*(float(pwmMax)/5.0);
+  float command = constrain(u, -pwmMax, pwmMax);
+  command = u;
 
   if (command > threshold) {
     command += minPWM;
@@ -231,8 +144,8 @@ float command_motors(int motor_pin1, int motor_pin2, float u) {
   }
 
   else {
-    digitalWrite(motor_pin1, LOW);
-    digitalWrite(motor_pin2, LOW);
+    analogWrite(motor_pin1, 0);
+    analogWrite(motor_pin2, 0);
   }
 
   return command;
@@ -255,22 +168,11 @@ bool project_circle(int duration, float magnitude, float frequency) {
 
   // step to zero
   bool start_status = 0;
-  start_status = center_mirrors_PID(0.05);
+  start_status = center_mirrors_PID(0.1);
 
   if (!start_status) {
     return false;
   }
-
-  // clear the buffers
-  u_x[0] = 0;
-  u_x[1] = 0;
-  y_x[0] = 0;
-  y_x[1] = 0;
-
-  u_y[0] = 0;
-  u_y[1] = 0;
-  y_y[0] = 0;
-  y_y[1] = 0;
   
   int num_cycles = 1000000*duration/Ts;
   int start_time = micros();
@@ -286,7 +188,7 @@ bool project_circle(int duration, float magnitude, float frequency) {
     int tableIndex = map(timeInCycle, 0, period_us, 0, tableSize - 1);  // Map time to table index
 
     float refAnglex = sineLookup[tableIndex];
-    float refAngley = 0;
+    float refAngley = 0.0;
     if (tableIndex < 270) {
       refAngley = sineLookup[tableIndex+90];
     }
@@ -299,8 +201,8 @@ bool project_circle(int duration, float magnitude, float frequency) {
     float mirrorAngley = angles.angley;
 
     // calculate error in radians (controller deals in radians)
-    float error_x = (refAnglex - mirrorAnglex)*(3.14159/180);
-    float error_y = (refAngley - mirrorAngley)*(3.14159/180);
+    float error_x = (refAnglex - mirrorAnglex);
+    float error_y = (refAngley - mirrorAngley);
 
     // calculate command
     float command_x = circle_control_PID(error_x, true);
@@ -308,35 +210,31 @@ bool project_circle(int duration, float magnitude, float frequency) {
 
     float pwm_x = command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, command_x);
     float pwm_y = command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, command_y);
-
-    int loop_end = micros();
-    int delay_time  = Ts - (loop_end - loop_start);
-    delayMicroseconds(delay_time);
+    
     if (loop_start % 500 < 100) {
-      // Serial.print(tableIndex);
-      // Serial.print(",");
+      Serial.print(mirrorAngley);
+      Serial.print(",");
+      Serial.print(refAngley);
+      Serial.print(",");
+      Serial.print(pwm_y);
+      Serial.print(",");
       Serial.print(mirrorAnglex);
       Serial.print(",");
       Serial.print(refAnglex);
       Serial.print(",");
       Serial.println(pwm_x);
     }
+    int loop_end = micros();
+    int delay_time  = Ts - (loop_end - loop_start);
+    delayMicroseconds(delay_time);
   }
+  e_prev_y = 0;
+  e_prev_x = 0;
+  sumErr_y = 0;
+  sumErr_x = 0;
 
   digitalWrite(LASER_PIN, LOW);
-  bool end_status = center_mirrors(0.05);
-  
-  // clear the buffers
-  u_x[0] = 1;
-  u_x[1] = 0;
-  y_x[0] = 0;
-  y_x[1] = 0;
-
-  u_y[0] = 1;
-  u_y[1] = 0;
-  y_y[0] = 0;
-  y_y[1] = 0;
-  
+  bool end_status = center_mirrors_PID(0.1);
   return true;
 
 }

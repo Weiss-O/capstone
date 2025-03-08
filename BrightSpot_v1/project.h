@@ -8,10 +8,7 @@ struct MirrorAngles {
     float angley;
 };
 
-float circle_control(float u_new, bool is_x);
 float circle_control_PID(float u_new, bool is_x);
-
-bool center_mirrors(float threshold_error);
 bool center_mirrors_PID(float threshold_error);
 
 MirrorAngles get_mirror_angles();
