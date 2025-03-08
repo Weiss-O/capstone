@@ -84,6 +84,11 @@ void pi_communications(String command) {
     }
   }
 
+  else if (commandChar == 'A') {
+    calibrate_galvo();
+    Serial.println("S");
+  }
+
   else {
     //send back F to indicate that we failed to execute a command 
     Serial.println('F');
