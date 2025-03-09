@@ -125,8 +125,8 @@ class PiCamera(Camera):
     def getDistortionMatrix(self):
         return self.camera_settings["distortion_matrix"]
     
-    def capture_and_send_remote(self, client_socket, image_name): #TODO: There is probably a better place for this functionality
-        Server.send_bytes(client_socket, b'STORE_IMAGE')
+    def capture_and_send_remote(self, server, image_name, pos=None): #TODO: There is probably a better place for this functionality
+        Server.send_bytes(server, b'STORE_IMAGE')
         
         image = self.capture()
         success, encoded_image = cv2.imencode('.jpg', image)
@@ -134,9 +134,12 @@ class PiCamera(Camera):
             raise Exception("Error encoding image")
         image_bytes = encoded_image.tobytes()
 
-        Server.send_bytes(client_socket, image_bytes)
+        Server.send_bytes(server, image_bytes)
 
-        Server.send_bytes(client_socket, image_name.encode())
+        if pos is not None:
+            Server.send_bytes(server, image_name.encode())
+        else:
+            Server.send_coords(server, pos)
 
 
 
