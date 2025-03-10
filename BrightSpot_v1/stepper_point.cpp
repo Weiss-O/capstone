@@ -6,12 +6,12 @@
 #define STEPPER_SPEED 1000
 #define STEPPER_ACCEL 100
 
-const int stepsPerRevolution = 2048; // Steps for full rotation
+const int stepsPerRevolution = 516; // Steps for full rotation
 const int positionLimit = -55; // corresponds to 10 degrees past the limit switch (10/360)*2048
 
 // Create two AccelStepper objects for tilt and pan motors
-AccelStepper tilt(STEPPER_TYPE, STEPPER_TILT_1, STEPPER_TILT_2, STEPPER_TILT_3, STEPPER_TILT_4); // Tilt motor
-AccelStepper pan(STEPPER_TYPE, STEPPER_PAN_1, STEPPER_PAN_2, STEPPER_PAN_3, STEPPER_PAN_4);    // Pan motor
+AccelStepper tilt(STEPPER_TYPE, STEPPER_TILT_1, STEPPER_TILT_3, STEPPER_TILT_2, STEPPER_TILT_4); // Tilt motor
+AccelStepper pan(STEPPER_TYPE, STEPPER_PAN_1, STEPPER_PAN_3, STEPPER_PAN_2, STEPPER_PAN_4);    // Pan motor
 
 void init_stepper() {
 // Set max speed and acceleration for both motors
@@ -28,10 +28,14 @@ void init_stepper() {
 bool home_stepper() {
   // switches closing causes the voltage to rise from gnd to 3.3v
   pan.setSpeed(-STEPPER_SPEED);
-  while(digitalRead(SWITCH_PAN) == LOW && pan.currentPosition() > positionLimit) {
+  Serial.println("Starting to wait");
+  //while(digitalRead(SWITCH_PAN) == LOW && pan.currentPosition() > positionLimit) {
+  while(digitalRead(SWITCH_PAN) == LOW){
     pan.runSpeed();
   }
-  
+
+  Serial.println("Switch hit");
+
   pan.setSpeed(0);
   pan.setSpeed(STEPPER_SPEED);
   

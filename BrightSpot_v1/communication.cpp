@@ -22,10 +22,10 @@ void pi_communications(String command) {
       int panSteps = command.substring(space1 + 1, space2).toInt();
       int tiltSteps = command.substring(space2 + 1).toInt();
 
-      Serial.print("echo stepper, ");
-      Serial.print(panSteps);
-      Serial.print(", ");
-      Serial.println(tiltSteps);
+      // Serial.print("echo stepper, ");
+      // Serial.print(panSteps);
+      // Serial.print(", ");
+      // Serial.println(tiltSteps);
 
       if (point_steppers(tiltSteps, panSteps)) {
         Serial.println("S");
@@ -82,6 +82,23 @@ void pi_communications(String command) {
     else {
       Serial.println("F");
     }
+  }
+
+  else if (commandChar == 'A') {
+    Serial.println("echo autocalibrate");
+    calibrate_galvo();
+  }
+
+  else if (commandChar == 'X') {
+    Serial.println("echo laser on");
+    laser_on();
+    Serial.println("S");
+  }
+
+  else if (commandChar == 'C') {
+    Serial.println("echo laser off");
+    laser_off();
+    Serial.println("S");
   }
 
   else {
