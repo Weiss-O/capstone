@@ -142,7 +142,7 @@ class PiCamera(Camera):
 
         Server.send_bytes(server, image_bytes)
         print("Sent image")
-        if pos is not None:
+        if pos == None:
             Server.send_bytes(server, image_name.encode())
         else:
             Server.send_coords(server, pos)
