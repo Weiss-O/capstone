@@ -109,6 +109,7 @@ class PiCamera(Camera):
         try:
             image = self.picam2.capture_array()
             image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+            image = cv2.rotate(image, cv2.ROTATE_180)
             return image
         except Exception as e:
             return e
@@ -139,6 +140,8 @@ class PiCamera(Camera):
         if not success:
             raise Exception("Error encoding image")
         image_bytes = encoded_image.tobytes()
+        #use cv2 to add a dot to the middle of the image
+        cv2.circle(image, (int(image.shape[1]/2), int(image.shape[0]/2)), 5, (0, 0, 255), -1)
 
         Server.send_bytes(server, image_bytes)
         print("Sent image")
