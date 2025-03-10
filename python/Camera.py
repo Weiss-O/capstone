@@ -225,7 +225,7 @@ if __name__ == "__main__":
     print("Connected")
     count = 0
     while True:
-        command = input("Enter command: ").encode()
+        command = input("Enter command: ")
         if command == "C":
             camera.capture_and_send_remote(server, f"manual_test_{count}")
         elif command == b'X':
