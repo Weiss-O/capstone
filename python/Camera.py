@@ -206,3 +206,28 @@ class CameraReferenceFrame():
         theta = np.arctan2(world_point[1], world_point[0])
 
         return theta, phi
+    
+
+if __name__ == "__main__":
+    import yaml
+    import socket
+    import Server
+    with open('config.yaml') as file:
+        config = yaml.safe_load(file)
+
+    camera = PiCamera(config["camera_settings"])
+    HOST = config["server_settings"]["HOST"]
+    PORT = config["server_settings"]["PORT"]
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.connect((HOST, PORT))
+
+    count = 0
+    while True:
+        command = input("Enter command: ").encode()
+        if command == "C":
+            camera.capture_and_send_remote(server, f"manual_test_{count}")
+        elif command == b'X':
+            break
+        else:
+            print(f"Unknown command: {command}")
+            break
