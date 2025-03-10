@@ -2,17 +2,18 @@
 #include "config.h"
 #include <Arduino.h>
 
-const float kp_x = 200.0;
+const float kp_x = 350.0;
 const float ki_x = 0.1;
-const float kd_x = 100;
+const float kd_x = 100.0;
+const float x_scale = 0.7;
 
 const float kp_y = 600.0;
 const float ki_y = 0.1;
 const float kd_y = 150;
 
-const float kp_c = 100;
-const float ki_c = 1;
-const float kd_c = 0.0;
+const float kp_c = 60;
+const float ki_c = 0.3;
+const float kd_c = 1;
 
 float sumErr_x = 0.0;
 float e_prev_x = 0.0;
@@ -20,7 +21,7 @@ float e_prev_x = 0.0;
 float sumErr_y = 0.0;
 float e_prev_y = 0.0;
 
-const float Ts = 500; // sample time in micros
+const float Ts = 250; // sample time in micros
 const int minPWM = 2000;
 const int pwmMax = 32757;
 const int threshold = 200;
@@ -32,8 +33,11 @@ float min_x = 385.0;
 
 float slope_y = 54.0/(max_y - min_y);
 float slope_x = 54.0/(max_x - min_x);
-float offsetx = -27 - (slope_x*min_x)+6;
-float offsety = -27 - (slope_y*min_y);
+float offsetx = -27 - (slope_x*min_x)-3;
+float offsety = -27 - (slope_y*min_y)+3;
+
+const int x_galvo_pin = GALVO_POS_X_R;
+const int y_galvo_pin = GALVO_POS_Y_R;
 
 void calibrate_galvo(){
   int commandSpeed = 4000;
@@ -44,9 +48,8 @@ void calibrate_galvo(){
   // hold for one second
   delay(1000);
   // record the value here
-  Serial.println("recording");
-  float x1 = analogRead(GALVO_POS_X_R);
-  float y1 = analogRead(GALVO_POS_Y_R);
+  float x1 = analogRead(x_galvo_pin);
+  float y1 = analogRead(y_galvo_pin);
 
   // write motors to 3000 in one direction
   command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, 0);
@@ -62,12 +65,13 @@ void calibrate_galvo(){
   delay(1000);
 
   // record the value here
-  Serial.println("recording");
-  float x2 = analogRead(GALVO_POS_X_R);
-  float y2 = analogRead(GALVO_POS_Y_R);
+  float x2 = analogRead(x_galvo_pin);
+  float y2 = analogRead(y_galvo_pin);
 
   command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, 0);
   command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, 0);
+
+  delay(1000);
 
   // check each one to see what is larger and what is smaller
   if (x2 > x1) {max_x = x2; min_x = x1;}
@@ -84,6 +88,9 @@ void calibrate_galvo(){
   Serial.print(" min_y: ");
   Serial.println(min_y);
 
+  if (center_mirrors_PID(0.5)) {Serial.println("finished centering succesfully");}
+  else {Serial.println("F");}
+  
   return;
 }
 
@@ -92,6 +99,7 @@ float circle_control_PID(float e_new, bool is_x) {
     sumErr_x += e_new;
     float dErr = (e_new - e_prev_x)/Ts;
     e_prev_x = e_new;
+    // Serial.println(dErr * kd_x);
     return kp_x * e_new + ki_x * sumErr_x + kd_x * dErr;
   }
 
@@ -106,16 +114,12 @@ float circle_control_PID(float e_new, bool is_x) {
 bool center_mirrors_PID(float threshold_error) {
   // Serial.println("centering started");
   int start_time = micros();
+  int num_cycles = 0;
+  int run_time = 0;
 
   do {
     int loop_start = micros();
-
-    // check if we've timed out
-    if (loop_start - start_time > 20000000){
-      command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, 0.0);
-      command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, 0.0);
-      return false;
-    }
+    run_time = loop_start-start_time;
 
     MirrorAngles test = get_mirror_angles();
     float mirrorAnglex = test.anglex;
@@ -144,12 +148,26 @@ bool center_mirrors_PID(float threshold_error) {
 
     // Serial.print(mirrorAnglex);
     // Serial.print(",");
-    // Serial.println(pwm_x);
+    // Serial.print(pwm_x);
+    // Serial.print(",");
+    // Serial.print(mirrorAngley);
+    // Serial.print(",");
+    // Serial.println(pwm_y);
 
     int loop_end = micros();
     int delay_time  = Ts - (loop_end - loop_start);
     delayMicroseconds(delay_time);
-  } while (abs(e_prev_x) > threshold_error || abs(e_prev_y) > threshold_error);
+
+    // Check that the error has been low for a while
+    if (abs(e_prev_y) < threshold_error && abs(e_prev_x) < threshold_error) {
+      num_cycles++;
+      // Serial.println(num_cycles);
+    }
+    else {
+      num_cycles = 0;
+    }
+
+  } while (num_cycles < 100 && run_time < 5000000);
 
   // reset the error and error sum terms
   e_prev_y = 0;
@@ -162,14 +180,28 @@ bool center_mirrors_PID(float threshold_error) {
   delay(2000);
   command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, 0);
   command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, 0);
-  return true;
+
+  MirrorAngles temp = get_mirror_angles();
+
+  // Serial.print(temp.anglex);
+  // Serial.print(" , ");
+  // Serial.println(temp.angley);
+
+  // Serial.print(num_cycles);
+  // Serial.print(" , ");
+  // Serial.println(run_time);
+
+  if (run_time < 5000000) {
+    return true;
+  }
+  else {return false;}
 }
 
 MirrorAngles get_mirror_angles(){
   MirrorAngles angles;
   // read the ADCs
-  int x_voltage = analogRead(GALVO_POS_X_R);
-  int y_voltage = analogRead(GALVO_POS_Y_R);
+  int x_voltage = analogRead(x_galvo_pin);
+  int y_voltage = analogRead(y_galvo_pin);
 
   // transform to angle
   angles.anglex = slope_x*x_voltage + offsetx;
@@ -219,26 +251,27 @@ bool project_circle(int duration, float magnitude, float frequency) {
 
   // step to zero
   bool start_status = 0;
-  start_status = center_mirrors_PID(0.1);
+  start_status = center_mirrors_PID(0.5);
 
   if (!start_status) {
     return false;
   }
   
-  int num_cycles = 1000000*duration/Ts;
-  int start_time = micros();
+  unsigned long num_cycles = 1000000*duration/Ts;
+  unsigned long start_time = micros();
 
   digitalWrite(LASER_PIN, HIGH);
 
   // repeat for the appropriate number of cycles
   for (int i=0; i<=num_cycles; i++) {
-    int loop_start = micros();
+    unsigned long loop_start = micros();
 
     // Get the reference angle from the lookup table
     unsigned long timeInCycle = (loop_start-start_time) % period_us;  // Time within one period
+
     int tableIndex = map(timeInCycle, 0, period_us, 0, tableSize - 1);  // Map time to table index
 
-    float refAnglex = sineLookup[tableIndex];
+    float refAnglex = x_scale*sineLookup[tableIndex];
     float refAngley = 0.0;
     if (tableIndex < 270) {
       refAngley = sineLookup[tableIndex+90];
@@ -262,7 +295,9 @@ bool project_circle(int duration, float magnitude, float frequency) {
     float pwm_x = command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, command_x);
     float pwm_y = command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, command_y);
     
-    if (loop_start % 500 < 100) {
+    if (loop_start % 5000 < 100) {
+      Serial.print(loop_start-start_time);
+      Serial.print(",");
       Serial.print(mirrorAngley);
       Serial.print(",");
       Serial.print(refAngley);
@@ -285,9 +320,29 @@ bool project_circle(int duration, float magnitude, float frequency) {
   sumErr_x = 0;
 
   digitalWrite(LASER_PIN, LOW);
-  bool end_status = center_mirrors_PID(0.1);
+  bool end_status = center_mirrors_PID(0.5);
   return true;
 
+}
+
+void laser_on() {
+  MirrorAngles temp = get_mirror_angles();
+  digitalWrite(LASER_PIN, HIGH);
+  Serial.print("Laser ON: ");
+  Serial.print(temp.anglex);
+  Serial.print(",");
+  Serial.println(temp.angley);
+  return;
+}
+
+void laser_off() {
+  MirrorAngles temp = get_mirror_angles();
+  digitalWrite(LASER_PIN, LOW);
+  Serial.print("Laser OFF: ");
+  Serial.print(temp.anglex);
+  Serial.print(",");
+  Serial.println(temp.angley);
+  return;
 }
 
 void init_project(){
@@ -297,8 +352,10 @@ void init_project(){
   pinMode(GALVO_MOTOR_Y2, OUTPUT);
   pinMode(LASER_PIN, OUTPUT);
 
-  pinMode(GALVO_POS_X_R, INPUT);
+  pinMode(x_galvo_pin, INPUT);
   pinMode(GALVO_POS_Y_L, INPUT);
   
   analogWriteResolution(15);
+
+  //calibrate_galvo();
 }
