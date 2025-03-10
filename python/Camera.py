@@ -214,13 +214,15 @@ if __name__ == "__main__":
     import Server
     with open('config.yaml') as file:
         config = yaml.safe_load(file)
-
+    print("File loaded")
     camera = PiCamera(config["camera_settings"])
+    print("Camera initialized")
     HOST = config["server_settings"]["HOST"]
     PORT = config["server_settings"]["PORT"]
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    print("Server initialized")
     server.connect((HOST, PORT))
-
+    print("Connected")
     count = 0
     while True:
         command = input("Enter command: ").encode()
