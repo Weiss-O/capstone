@@ -132,7 +132,7 @@ class PiCamera(Camera):
         try:
             image = self.capture()
             #use cv2 to add a dot to the middle of the image
-            cv2.circle(image, (int(image.shape[1]/2), int(image.shape[0]/2)), 5, (0, 0, 255), -1)
+            cv2.circle(image, (int(image.shape[1]/2), int(image.shape[0]/2)), 15, (0, 0, 255), -1)
             print("Image Captured")
         except Exception as e:
             print(f"Error capturing image: {e}")
