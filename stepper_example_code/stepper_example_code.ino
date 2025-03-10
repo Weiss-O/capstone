@@ -20,7 +20,7 @@
 #define STEPPER_PAN_2 7
 #define STEPPER_PAN_3 8
 #define STEPPER_PAN_4 9
-const int stepsPerRevolution = 200;  // change this to fit the number of steps per revolution
+const int stepsPerRevolution = 100;  // change this to fit the number of steps per revolution
 // for your motor
 
 // initialize the stepper library on pins 8 through 11:
