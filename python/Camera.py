@@ -222,6 +222,7 @@ if __name__ == "__main__":
         config = yaml.safe_load(file)
     print("File loaded")
     camera = PiCamera(config["camera_settings"])
+    camera.start()
     print("Camera initialized")
     HOST = config["server_settings"]["HOST"]
     PORT = config["server_settings"]["PORT"]
