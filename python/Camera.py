@@ -108,7 +108,7 @@ class PiCamera(Camera):
     def capture(self):
         try:
             image = self.picam2.capture_array()
-            image = image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
             return image
         except Exception as e:
             return e
