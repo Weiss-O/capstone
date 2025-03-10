@@ -127,8 +127,11 @@ class PiCamera(Camera):
     
     def capture_and_send_remote(self, server, image_name, pos=None): #TODO: There is probably a better place for this functionality
         Server.send_bytes(server, b'STORE_IMAGE')
-        
-        image = self.capture()
+        try:
+            image = self.capture()
+        except Exception as e:
+            print(f"Error capturing image: {e}")
+            return
         success, encoded_image = cv2.imencode('.jpg', image)
         if not success:
             raise Exception("Error encoding image")
