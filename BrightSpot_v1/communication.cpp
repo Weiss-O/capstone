@@ -85,7 +85,19 @@ void pi_communications(String command) {
   }
 
   else if (commandChar == 'A') {
+    Serial.println("echo autocalibrate");
     calibrate_galvo();
+  }
+
+  else if (commandChar == 'X') {
+    Serial.println("echo laser on");
+    laser_on();
+    Serial.println("S");
+  }
+
+  else if (commandChar == 'C') {
+    Serial.println("echo laser off");
+    laser_off();
     Serial.println("S");
   }
 
