@@ -99,8 +99,7 @@ class PiCamera(Camera):
 
     def capture_file(self, image_path):
         try:
-            image = self.picam2.capture_array()
-            image = image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+            image = self.capture()
             cv2.imwrite(image_path, image)
         except Exception as e:
             return e
