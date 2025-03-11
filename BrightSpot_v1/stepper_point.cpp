@@ -3,10 +3,10 @@
 #include <Arduino.h>
 #include <AccelStepper.h>
 
-#define STEPPER_SPEED 1000
+#define STEPPER_SPEED 500
 #define STEPPER_ACCEL 100
 
-const int stepsPerRevolution = 516; // Steps for full rotation
+const int stepsPerRevolution = 2048; // Steps for full rotation
 const int positionLimit = -55; // corresponds to 10 degrees past the limit switch (10/360)*2048
 
 // Create two AccelStepper objects for tilt and pan motors
