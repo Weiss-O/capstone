@@ -2,6 +2,7 @@
 import serial
 import numpy as np
 import glob
+import os
 
 class Controller():
     def __init__(self, controller_settings):
@@ -144,19 +145,16 @@ def degrees_to_steps(degrees, steps_per_revolution):
 def steps_to_degrees(steps, steps_per_revolution):
     return steps * 360 / steps_per_revolution
 
-if __name__ == "__main__":
+if os.getenv("TESTING", False) == "True":
     import yaml
 
     with open("config.yaml", "r") as file:
         config = yaml.safe_load(file)
 
-    controller = Controller(config["controller_settings"])
-    if not controller.is_open:
+    c = Controller(config["controller_settings"])
+    if not c.is_open:
         print("Controller is not connected")
         exit()
-
-    controller.point_camera(0, 0)
-    controller.point_projector(0, 0)
 
     #make array of points, theta 0 to 90, phi 0 to 90, in 10 degree increments
      
