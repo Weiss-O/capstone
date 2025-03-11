@@ -13,7 +13,6 @@ cd /home/weiso6959/capstone
 
 # Ensure clean checkout
 git checkout -f aaron
-git pull
 
 # Navigate to the specified Arduino project directory
 cd "$arduino_project_name" || { echo "Project directory not found!"; exit 1; }
@@ -43,4 +42,5 @@ fi
 
 # Set environment variable and start Python
 export RPI=True
+export TESTING=True
 python
