@@ -105,7 +105,16 @@ void pi_communications(String command) {
     laser_off();
     Serial.println("S");
   }
-
+  else if(commandChar == 'S'){
+    int panSpeed = command.substring(space1 + 1, space2).toInt();
+    int tiltSpeed = command.substring(space2 + 1).toInt();
+    setSpeeds(panSpeed, tiltSpeed);
+  }
+  else if(commandChar == 'Y'){
+    int panAccel = command.substring(space1 + 1, space2).toInt();
+    int tiltAccel = command.substring(space2 + 1).toInt();
+    setAccels(panAccel, tiltAccel);
+  }
   else {
     //send back F to indicate that we failed to execute a command 
     Serial.println('F1');

@@ -3,8 +3,10 @@
 #include <Arduino.h>
 #include <AccelStepper.h>
 
-#define STEPPER_SPEED 150
-#define STEPPER_ACCEL 2000
+#define TILT_STEPPER_SPEED 150
+#define TILT_STEPPER_ACCEL 2000
+#define PAN_STEPPER_SPEED 150
+#define PAN_STEPPER_ACCEL 2000
 
 const int stepsPerRevolution = 2048; // Steps for full rotation
 const int positionLimit = -55; // corresponds to 10 degrees past the limit switch (10/360)*2048
@@ -15,11 +17,11 @@ AccelStepper pan(STEPPER_TYPE, STEPPER_PAN_1, STEPPER_PAN_3, STEPPER_PAN_2, STEP
 
 void init_stepper() {
 // Set max speed and acceleration for both motors
-  tilt.setMaxSpeed(STEPPER_SPEED);
-  tilt.setAcceleration(STEPPER_ACCEL);
+  tilt.setMaxSpeed(TILT_STEPPER_SPEED);
+  tilt.setAcceleration(TILT_STEPPER_ACCEL);
 
-  pan.setMaxSpeed(STEPPER_SPEED);
-  pan.setAcceleration(STEPPER_ACCEL);
+  pan.setMaxSpeed(PAN_STEPPER_SPEED);
+  pan.setAcceleration(PAN_STEPPER_ACCEL);
 
   pinMode(SWITCH_TILT, INPUT);
   pinMode(SWITCH_PAN, INPUT);
@@ -27,7 +29,7 @@ void init_stepper() {
 
 bool home_stepper() {
   // switches closing causes the voltage to rise from gnd to 3.3v
-  pan.setSpeed(-STEPPER_SPEED);
+  pan.setSpeed(-PAN_STEPPER_SPEED);
   Serial.println("Starting to wait");
   //while(digitalRead(SWITCH_PAN) == LOW && pan.currentPosition() > positionLimit) {
   while(digitalRead(SWITCH_PAN) == LOW){
@@ -37,7 +39,7 @@ bool home_stepper() {
   Serial.println("Switch hit");
 
   pan.setSpeed(0);
-  pan.setSpeed(STEPPER_SPEED);
+  pan.setSpeed(PAN_STEPPER_SPEED);
   pan.disableOutputs();
 
   if (pan.currentPosition()  <= positionLimit) {
@@ -72,4 +74,13 @@ void disableMotors() {
   pan.disableOutputs();
   tilt.disableOutputs();
   return;
+}
+
+void setSpeeds(int panSpeed, int tiltSpeed){
+  pan.setMaxSpeed(panSpeed);
+  tilt.setMaxSpeed(tiltSpeed);
+}
+void setAccels(int panAccel, int tiltAccel){
+  pan.setAcceleration(panAccel);
+  tilt.setAcceleration(tiltAccel);
 }
