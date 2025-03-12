@@ -13,8 +13,8 @@ controller_settings:
   steps_per_revolution: 2048
   camera_offset:
     radial: 50
-    theta: 0
-    phi: 0
+    theta: 45
+    phi: 45
   projector_offset:
     radial: 50
     theta: -5
