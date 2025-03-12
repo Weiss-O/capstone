@@ -34,6 +34,6 @@
 
 // Other constants
 #define SERIAL_BAUD_RATE 9600
-#define STEPPER_TYPE 2
+#define STEPPER_TYPE 4
 
 #endif
