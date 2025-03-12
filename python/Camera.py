@@ -74,6 +74,7 @@ class CameraStandIn(Camera):
 def ft_to_mm(ft):
     return ft*304.8
 
+
 class PiCamera(Camera):
     def __init__(self, camera_settings):
         self.camera_settings = camera_settings
