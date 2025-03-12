@@ -49,7 +49,7 @@ class Controller():
     def moveAbsolute(self, theta_steps, phi_steps):
         theta_relative = theta_steps - self.current_position[0]
         phi_relative = phi_steps - self.current_position[1] #FIXME: This might be wrong
-        self.current_signs = [np.sign(theta_relative), np.sign(phi_relative)]
+        # self.current_signs = [np.sign(theta_relative), np.sign(phi_relative)]
         
         
         # theta_compensated = 0
@@ -75,7 +75,10 @@ class Controller():
         #Check if positionining was successful
         if response != "S":
             return Exception(f"Positioning Error: {response}")
-        self.current_position = [theta_steps, phi_steps]
+        else:
+            print("success positioning")
+            self.current_position = [theta_steps, phi_steps]
+            print(f"abs rotation: ({self.current_position[0]}, {self.current_position[1]})")
     
     def center(self):
         self.ser.write(CommandGenerator.CENTER_COMMAND.encode())
