@@ -41,6 +41,7 @@ void pi_communications(String command) {
   }
 
   else if (commandChar == 'Z'){
+    Serial.println("echo disable motors");
     disableMotors();
   }
 
