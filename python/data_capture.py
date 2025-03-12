@@ -20,7 +20,6 @@ if os.environ.get('RPI', 'False').lower()== 'true':
     server.connect((HOST, PORT))
 
 
-
 #Initialize the camera
     cameraType = Camera.PiCamera if os.environ.get('RPI', 'False').lower() == 'true' else Camera.CameraStandIn #TODO: Make it so that this takes photo with  
     camera = cameraType(config["camera_settings"])
