@@ -46,6 +46,8 @@ current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 #TODO: The below loop will assign points but it will not
 #Move to each baseline position and take an image
 for i, point in enumerate(points):
+    #wait for input
+    input(f"Move to position {i+1} and press enter")
     theta_actual, phi_actual = teensy.point_camera(point[0], point[1]) #TODO: Fix the Arduino so that the positiv
     time.sleep(1) #Wait for the camera to stabilize
 
