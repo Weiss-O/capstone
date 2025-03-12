@@ -55,6 +55,7 @@ for i, point in enumerate(points):
 
     image_path = os.path.join(baseline_dir, f"baseline{i}_{current_time}.jpg")
     camera.capture_file(image_path)
+    teensy.motors_off()
     time.sleep(2)
 
     config["baseline"][f"POS{i}"] = {"image_path": image_path, "camera_pos": [float(theta_actual), float(phi_actual)]}
