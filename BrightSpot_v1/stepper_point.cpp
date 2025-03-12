@@ -62,8 +62,13 @@ bool point_steppers(int tilt_steps, int pan_steps) {
   }
 
   pan.disableOutputs();
-  tilt.disableOutputs();
+  // tilt.disableOutputs();
   // fail if it doesn't hit the desired position
 
   return true;
+}
+
+void disableMotors() {
+  pan.disableOutputs();
+  tilt.disableOutputs();
 }

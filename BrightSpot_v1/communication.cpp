@@ -39,7 +39,9 @@ void pi_communications(String command) {
       Serial.println('F');
     }
   }
-
+  else if (commandChar == 'Z'){
+    disableMotors();
+  }
   else if (commandChar == 'L'){ //L dur mag freq
     // call the projection command function
     int space1 = command.indexOf(' ');          // First space
