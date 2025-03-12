@@ -77,7 +77,7 @@ class Controller():
             return Exception(f"Positioning Error: {response}")
         else:
             print("success positioning")
-            self.current_position = [theta_steps, phi_steps]
+            self.current_position = -[theta_steps, phi_steps]
             print(f"abs rotation: ({self.current_position[0]}, {self.current_position[1]})")
     
     def center(self):
