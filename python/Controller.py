@@ -73,11 +73,11 @@ class Controller():
             pass
         response = self.ser.readline().decode('utf-8').rstrip()
         #Check if positionining was successful
+        self.current_position = [theta_steps, phi_steps]
         if response != "S":
             return Exception(f"Positioning Error: {response}")
         else:
             print("success positioning")
-            self.current_position = [theta_steps, phi_steps]
             print(f"abs rotation: ({self.current_position[0]}, {self.current_position[1]})")
     
     def center(self):
