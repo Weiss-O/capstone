@@ -39,10 +39,12 @@ void pi_communications(String command) {
       Serial.println('F');
     }
   }
+
   else if (commandChar == 'Z'){
-    serial.println("echo disable motors");
+    Serial.println("echo disable motors");
     disableMotors();
   }
+
   else if (commandChar == 'L'){ //L dur mag freq
     // call the projection command function
     int space1 = command.indexOf(' ');          // First space
@@ -106,7 +108,7 @@ void pi_communications(String command) {
 
   else {
     //send back F to indicate that we failed to execute a command 
-    Serial.println('F');
+    Serial.println('F1');
   }
 
   return;
