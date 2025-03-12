@@ -49,17 +49,17 @@ class Controller():
     def moveAbsolute(self, theta_steps, phi_steps):
         theta_relative = theta_steps - self.current_position[0]
         phi_relative = phi_steps - self.current_position[1] #FIXME: This might be wrong
-        self. current_signs = [np.sign(theta_relative), np.sign(phi_relative)]
+        self.current_signs = [np.sign(theta_relative), np.sign(phi_relative)]
         if theta_relative != 0:
             if self.current_signs[0] != self.previous_signs[0]:
                 #Add steps (depending on direction) to compensate for backlash
-                theta_relative += self.settings["backlash"]["theta"] * self.current_signs[0]
+                theta_compensated += self.settings["backlash"]["theta"] * self.current_signs[0]
         if phi_relative != 0:
             if self.current_signs[1] != self.previous_signs[1]:
                 #Add steps (depending on direction) to compensate for backlash
-                phi_relative += self.settings["backlash"]["phi"] * self.current_signs[1]
+                phi_compensated += self.settings["backlash"]["phi"] * self.current_signs[1]
         self.previous_signs = self.current_signs
-        command = CommandGenerator.generate_point_command(theta_relative, -phi_relative)
+        command = CommandGenerator.generate_point_command(theta_compensated, -phi_compensated)
         self.ser.write(command.encode())
         self.ser.flush()
         
@@ -124,7 +124,7 @@ class Controller():
         self.current_position = [0, 0]
 
     def home(self):
-        self.point_camera(self.settings["home_position"]["theta"], self.settings["home_position"]["phi"]) #Jank
+        self.moveAbsolute(self.current_position[0], self.current_position[1]) #Jank
 
 class ControllerStandIn(Controller):
     def __init__(self, controller_settings):
