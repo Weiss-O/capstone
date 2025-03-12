@@ -3,8 +3,8 @@
 #include <Arduino.h>
 #include <AccelStepper.h>
 
-#define STEPPER_SPEED 250
-#define STEPPER_ACCEL 1000
+#define STEPPER_SPEED 150
+#define STEPPER_ACCEL 2000
 
 const int stepsPerRevolution = 2048; // Steps for full rotation
 const int positionLimit = -55; // corresponds to 10 degrees past the limit switch (10/360)*2048
