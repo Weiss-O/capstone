@@ -152,24 +152,19 @@ def point(): #This is not the full functionality. The projection functionality n
         if os.environ.get('SEND_OBJECT_PHOTOS', 'False').lower()== 'true':
                 camera.capture_and_send_remote(server, f"object_capture-{obj.center_coordinate[0]}x{obj.center_coordinate[1]}y")
 
-        # try:
-        #     corner_ray = camera.calculate_pointing_ray(obj.corner_coordinate, degrees=True)
-
-        #     pointing_cartesian = Camera.CameraReferenceFrame.spherical_to_cartesian(*pointing_ray)
-        #     corner_cartesian = Camera.CameraReferenceFrame.spherical_to_cartesian(*corner_ray)
-
-        #     angle = camera.angle_between_rays(pointing_cartesian, corner_cartesian)
-            
-        #     #Map degrees [0, 10] to [0, 255]
-        #     angle = int(angle * 255 / 10)
-        #     if angle > 150:
-        #         angle = 150
-        #     teensy.project_cone(angle, angle, 20, 10)
-        #     time.sleep(0.5)
-        # except Exception as e:
-        #     print(f"Error: {e}")
-        #     teensy.home()
+        try:
+            point_task()
+        except Exception as e:
+            print(f"Error executing pointing task: {e}")
         detectedObjects.remove(obj)
+
+def point_task():
+    teensy.center()
+    time.sleep(5) #Wait for centering
+    teensy.laser_on()
+    time.sleep(5) #Wait for laser to stabilize
+    teensy.laser_off()
+
 
 #Main function
 if __name__ == "__main__":    

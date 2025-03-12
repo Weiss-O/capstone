@@ -71,6 +71,15 @@ class Controller():
         if response != "S":
             return Exception(f"Positioning Error: {response}")
         self.current_position = [theta_steps, phi_steps]
+    
+    def center(self):
+        self.ser.write(CommandGenerator.CENTER_COMMAND.encode())
+    def laser_on(self):
+        self.ser.write(CommandGenerator.LASER_ON_COMMAND.encode())
+    def laser_off(self):
+        self.ser.write(CommandGenerator.LASER_OFF_COMMAND.encode())
+    def motors_off(self):
+        self.ser.write(CommandGenerator.MOTORS_OFF_COMMAND.encode())
 
     #projects a cone. alpha and beta are in degrees
     def project_cone(self, alpha, beta, freq=15, duration = 3):
@@ -115,18 +124,7 @@ class Controller():
         self.current_position = [0, 0]
 
     def home(self):
-        command = CommandGenerator.HOME_COMMAND
-        self.ser.write(command.encode())
-        self.ser.flush()
-
-        #Wait for a response
-        while self.ser.in_waiting == 0:
-            pass
-        response = self.ser.readline().decode('utf-8').rstrip()
-        #Check if positionining was successful
-        if response != "S":
-            return Exception(f"Homing Error")
-        self.current_position = [0, 0]
+        self.point_camera(self.settings["home_position"]["theta"], self.settings["home_position"]["phi"]) #Jank
 
 class ControllerStandIn(Controller):
     def __init__(self, controller_settings):
@@ -150,6 +148,10 @@ class CommandGenerator():
     
     HOME_COMMAND = "H2\n"
     ZERO_COMMAND = "Z2\n"
+    CENTER_COMMAND = "A\n"
+    LASER_ON_COMMAND = "X\n"
+    LASER_OFF_COMMAND = "C\n"
+    MOTORS_OFF_COMMAND = "Z\n"
 
 def degrees_to_steps(degrees, steps_per_revolution):
     return np.round(degrees * steps_per_revolution / 360)
