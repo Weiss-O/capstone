@@ -79,8 +79,12 @@ void disableMotors() {
 void setSpeeds(int panSpeed, int tiltSpeed){
   pan.setMaxSpeed(panSpeed);
   tilt.setMaxSpeed(tiltSpeed);
+  pan.setSpeed(panSpeed);
+  tilt.setSpeed(tiltSpeed);
+  return;
 }
 void setAccels(int panAccel, int tiltAccel){
   pan.setAcceleration(panAccel);
   tilt.setAcceleration(tiltAccel);
+  return;
 }
