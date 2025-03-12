@@ -130,9 +130,6 @@ class PiCamera(Camera):
         print("Sent STORE_IMAGE command")
         try:
             image = self.capture()
-            #use cv2 to add a dot to the middle of the image
-            cv2.circle(image, (int(image.shape[1]/2), int(image.shape[0]/2)), 15, (0, 0, 255), -1)
-            print("Image Captured")
         except Exception as e:
             print(f"Error capturing image: {e}")
             return
