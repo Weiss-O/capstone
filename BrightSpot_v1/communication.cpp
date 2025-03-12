@@ -106,11 +106,15 @@ void pi_communications(String command) {
     Serial.println("S");
   }
   else if(commandChar == 'S'){
+    int space1 = command.indexOf(' ');          // First space
+    int space2 = command.indexOf(' ', space1 + 1); // Second space
     int panSpeed = command.substring(space1 + 1, space2).toInt();
     int tiltSpeed = command.substring(space2 + 1).toInt();
     setSpeeds(panSpeed, tiltSpeed);
   }
   else if(commandChar == 'Y'){
+    int space1 = command.indexOf(' ');          // First space
+    int space2 = command.indexOf(' ', space1 + 1); // Second space
     int panAccel = command.substring(space1 + 1, space2).toInt();
     int tiltAccel = command.substring(space2 + 1).toInt();
     setAccels(panAccel, tiltAccel);
