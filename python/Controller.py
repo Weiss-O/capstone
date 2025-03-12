@@ -47,7 +47,7 @@ class Controller():
     def moveAbsolute(self, theta_steps, phi_steps):
         theta_relative = theta_steps - self.current_position[0]
         phi_relative = phi_steps - self.current_position[1] #FIXME: This might be wrong
-        command = CommandGenerator.generate_point_command(-theta_relative, phi_relative)
+        command = CommandGenerator.generate_point_command(theta_relative, -phi_relative)
         self.ser.write(command.encode())
         self.ser.flush()
         
