@@ -170,6 +170,28 @@ class CameraReferenceFrame():
             [0, 0, 1]
         ])
     
+    @classmethod
+    def angle_between_rays(ray1, ray2, degrees=True):
+        dot_product = np.dot(ray1, ray2)
+        dot_product = np.clip(dot_product, -1.0, 1.0)  # Avoid numerical errors
+        
+        angle = np.arccos(dot_product)
+        
+        return np.degrees(angle) if degrees else angle
+    
+    @classmethod
+    def spherical_to_cartesian(theta, phi, degrees=True):
+        if degrees:
+            theta = np.radians(theta)
+            phi = np.radians(phi)
+        
+        x = np.cos(theta) * np.cos(phi)
+        y = np.sin(theta) * np.cos(phi)
+        z = np.sin(phi)
+        
+        return np.array([x, y, z])
+
+
     #Change from 3D point in camera reference frame to 2D point in image reference frame
     def cam_to_image(self, point):
         return np.dot(self.T_cam_photo, point[:3]/point[2])

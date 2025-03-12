@@ -145,13 +145,30 @@ def point(): #This is not the full functionality. The projection functionality n
         #TODO: There has to be a better way of doing this
         camera.update_ReferenceFrame(obj.camera_position[0], obj.camera_position[1]) #Update the camera theta_phi to be the ones used to capture the image containing the object
         pointing_ray = camera.calculate_pointing_ray(obj.center_coordinate, degrees=True)
+        
         theta_actual, phi_actual = teensy.point_camera(pointing_ray[0], pointing_ray[1])
         print(f"Pointed camera to ({theta_actual}, {phi_actual})")
         time.sleep(1)
         if os.environ.get('SEND_OBJECT_PHOTOS', 'False').lower()== 'true':
                 camera.capture_and_send_remote(server, f"object_capture-{obj.center_coordinate[0]}x{obj.center_coordinate[1]}y")
 
-        time.sleep(0.5)
+        # try:
+        #     corner_ray = camera.calculate_pointing_ray(obj.corner_coordinate, degrees=True)
+
+        #     pointing_cartesian = Camera.CameraReferenceFrame.spherical_to_cartesian(*pointing_ray)
+        #     corner_cartesian = Camera.CameraReferenceFrame.spherical_to_cartesian(*corner_ray)
+
+        #     angle = camera.angle_between_rays(pointing_cartesian, corner_cartesian)
+            
+        #     #Map degrees [0, 10] to [0, 255]
+        #     angle = int(angle * 255 / 10)
+        #     if angle > 150:
+        #         angle = 150
+        #     teensy.project_cone(angle, angle, 20, 10)
+        #     time.sleep(0.5)
+        # except Exception as e:
+        #     print(f"Error: {e}")
+        #     teensy.home()
         detectedObjects.remove(obj)
 
 #Main function
