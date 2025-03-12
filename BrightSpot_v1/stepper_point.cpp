@@ -38,7 +38,8 @@ bool home_stepper() {
 
   pan.setSpeed(0);
   pan.setSpeed(STEPPER_SPEED);
-  
+  pan.disableOutputs();
+
   if (pan.currentPosition()  <= positionLimit) {
     return false;
   }
@@ -60,6 +61,8 @@ bool point_steppers(int tilt_steps, int pan_steps) {
       tilt.run();  // Keeps moving until it reaches the target
   }
 
+  pan.disableOutputs();
+  tilt.disableOutputs();
   // fail if it doesn't hit the desired position
 
   return true;
