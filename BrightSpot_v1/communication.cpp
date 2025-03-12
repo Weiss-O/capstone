@@ -40,6 +40,7 @@ void pi_communications(String command) {
     }
   }
   else if (commandChar == 'Z'){
+    serial.println("echo disable motors");
     disableMotors();
   }
   else if (commandChar == 'L'){ //L dur mag freq
