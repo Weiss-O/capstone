@@ -53,12 +53,12 @@ bool point_steppers(int tilt_steps, int pan_steps) {
 
   pan.move(pan_steps); 
   while (pan.distanceToGo() != 0) {  
-      pan.runSpeed();  // Keeps moving until it reaches the target
+      pan.run();  // Keeps moving until it reaches the target
   }
   
   tilt.move(tilt_steps); 
   while (tilt.distanceToGo() != 0) {  
-      tilt.runSpeed();  // Keeps moving until it reaches the target
+      tilt.run();  // Keeps moving until it reaches the target
   }
 
   pan.disableOutputs();

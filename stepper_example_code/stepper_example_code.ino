@@ -17,7 +17,7 @@
 
 #include <Stepper.h>
 #include "config.h"
-const int stepsPerRevolution = 2048;  // change this to fit the number of steps per revolution
+const int stepsPerRevolution = 1024;  // change this to fit the number of steps per revolution
 // for your motor
 
 // initialize the stepper library on pins 8 through 11:
@@ -28,12 +28,11 @@ void setup() {
   myStepper.setSpeed(20);
   // initialize the serial port:
   Serial.begin(9600);
+  myStepper.step(stepsPerRevolution/18); //move 20 degrees
+  delay(500);
 }
 
 void loop() {
   // step one revolution  in one direction:
-  Serial.println("clockwise");
-  myStepper.step(stepsPerRevolution/18); //move 20 degrees
-  delay(500);
 }
 
