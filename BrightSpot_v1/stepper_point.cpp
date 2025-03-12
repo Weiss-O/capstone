@@ -71,4 +71,5 @@ bool point_steppers(int tilt_steps, int pan_steps) {
 void disableMotors() {
   pan.disableOutputs();
   tilt.disableOutputs();
+  return;
 }
