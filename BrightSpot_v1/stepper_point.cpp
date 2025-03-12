@@ -62,7 +62,7 @@ bool point_steppers(int tilt_steps, int pan_steps) {
   }
 
   pan.disableOutputs();
-  // tilt.disableOutputs();
+  tilt.disableOutputs(); //GETS REALLY HOT IF YOU DO THIS BE CAREFUL!
   // fail if it doesn't hit the desired position
 
   return true;
