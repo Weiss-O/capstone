@@ -4,5 +4,6 @@
 void init_stepper();
 bool home_stepper();
 bool point_steppers(int tilt_steps, int pan_steps);
+void disableMotors();
 
 #endif
