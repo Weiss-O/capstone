@@ -57,11 +57,11 @@ class Controller():
         if theta_relative != 0:
             if self.current_signs[0] != self.previous_signs[0]:
                 #Add steps (depending on direction) to compensate for backlash
-                theta_compensated += self.settings["backlash"]["theta"] * self.current_signs[0]
+                theta_compensated -= self.settings["backlash"]["theta"] * self.current_signs[0]
         if phi_relative != 0:
             if self.current_signs[1] != self.previous_signs[1]:
                 #Add steps (depending on direction) to compensate for backlash
-                phi_compensated += self.settings["backlash"]["phi"] * self.current_signs[1]
+                phi_compensated -= self.settings["backlash"]["phi"] * self.current_signs[1]
         self.previous_signs = self.current_signs
         command = CommandGenerator.generate_point_command(theta_compensated, -phi_compensated)
         # command = CommandGenerator.generate_point_command(theta_relative, -phi_relative)
