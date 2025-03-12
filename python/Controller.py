@@ -129,7 +129,7 @@ class Controller():
         self.current_position = [0, 0]
 
     def home(self):
-        self.moveAbsolute(self.current_position[0], self.current_position[1]) #Jank
+        self.moveAbsolute(0, 0) #Jank
 
 class ControllerStandIn(Controller):
     def __init__(self, controller_settings):
