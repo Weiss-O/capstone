@@ -24,6 +24,9 @@ controller_settings:
   projector_ROM:
     alpha: 10
     beta: 10
+  backlash:
+    theta: 10
+    phi: 40  
 server_settings:
   HOST: '100.72.50.30'
   PORT: 5000

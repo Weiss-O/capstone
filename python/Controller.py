@@ -15,6 +15,8 @@ class Controller():
         self.ser.reset_input_buffer()
         self.is_open = self.ser.is_open
         self.current_position = [0, 0]
+        self.previous_signs = [1, 1]
+        self.current_signs = [1, 1]
         
     #Expexts an input in degreees
     def point_camera(self, theta, phi):
@@ -47,6 +49,14 @@ class Controller():
     def moveAbsolute(self, theta_steps, phi_steps):
         theta_relative = theta_steps - self.current_position[0]
         phi_relative = phi_steps - self.current_position[1] #FIXME: This might be wrong
+        self. current_signs = [np.sign(theta_relative), np.sign(phi_relative)]
+        if self.current_signs[0] != self.previous_signs[0]:
+            #Add steps (depending on direction) to compensate for backlash
+            theta_relative += self.settings["backlash"]["theta"] * self.current_signs[0]
+        if self.current_signs[1] != self.previous_signs[1]:
+            #Add steps (depending on direction) to compensate for backlash
+            phi_relative += self.settings["backlash"]["phi"] * self.current_signs[1]
+        self.previous_signs = self.current_signs
         command = CommandGenerator.generate_point_command(theta_relative, -phi_relative)
         self.ser.write(command.encode())
         self.ser.flush()
