@@ -21,9 +21,12 @@ class Controller():
     #Expexts an input in degreees
     def point_camera(self, theta, phi):
         theta_cam = theta - self.settings["camera_offset"]["theta"]
+        print(f"theta_cam: {theta_cam}")
         phi_cam = phi - self.settings["camera_offset"]["phi"]
+        print(f"phi_cam: {phi_cam}")
         theta_steps = degrees_to_steps(theta_cam, self.settings["steps_per_revolution"])
         phi_steps = degrees_to_steps(phi_cam, self.settings["steps_per_revolution"])
+        print(f"theta_steps: {theta_steps}, phi_steps: {phi_steps}")
         theta_actual = steps_to_degrees(theta_steps, self.settings["steps_per_revolution"]) + self.settings["camera_offset"]["theta"]
         phi_actual = steps_to_degrees(phi_steps, self.settings["steps_per_revolution"]) + self.settings["camera_offset"]["phi"]
         

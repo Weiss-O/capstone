@@ -183,6 +183,8 @@ if __name__ == "__main__":
     #Initialize the controller
     controllerType = Controller.Controller if os.environ.get('RPI', 'False').lower() == 'true' else Controller.ControllerStandIn
     teensy = controllerType(config["controller_settings"]) #TODO: Implement this class
+    teensy.home()
+    
     if not teensy.is_open:
         raise Exception("Controller not connected")
     time.sleep(2)
