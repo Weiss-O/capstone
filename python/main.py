@@ -120,15 +120,18 @@ def scan():
     image_array = []
     for POSID in config["baseline"].keys():
         #Move to position
+        print(f"Moving to position {POSID}, {config['baseline'][POSID]['camera_pos']}")
         pos = config["baseline"][POSID]["camera_pos"]
         theta_actual, phi_actual = teensy.point_camera(pos[0], pos[1])
-        time.sleep(1) #Wait for the camera to stabilize
+        time.sleep(2) #Wait for the camera to stabilize
         image = camera.capture()
-        print (f"Captured image at position ({theta_actual}, {phi_actual})")
+        time.sleep(1)
+        print(f"Captured image at position ({theta_actual}, {phi_actual})")
         if os.environ.get('IGNORE_PEOPLE', 'False').lower()== 'true':
             PERSON_DETECTED = False
         else:
             PERSON_DETECTED = PersonDetection.detect_person(image=image)
+        
         if PERSON_DETECTED:
             teensy.home()
             return True, [] #Return empty list because no further processing should be done
