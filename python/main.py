@@ -80,7 +80,7 @@ class Vacant(State):
     def handle():
         global scanned_for_objects
         PERSON_DETECTED, imageArray = scan()
-        if os.environ.get('PD', 'Auto').lower()== 'manual':
+        if os.environ.get('IGNORE_PEOPLE', 'False').lower()== 'true':
             PD = input("Is there a person in the room? (Y/n)")
             PERSON_DETECTED = PD == "Y"
         if PERSON_DETECTED:
