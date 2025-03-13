@@ -4,6 +4,7 @@ import cv2
 import struct
 import numpy as np
 import ContourAnalysis as CA
+import matplotlib.pyplot as plt
 
 # ----------------------------------
 # 1. Create Model Predictor Interface
@@ -217,7 +218,7 @@ class IOUSegmentationClassifier(Classifier):
         if baseline_image is not None:
             self.baseline_predictor.set_image(baseline_image)     
 
-    def classify(self, image, proposals) -> list:
+    def classify(self, image, proposals, **kwargs) -> list:
         self.test_predictor.set_image(image)
         
         baseline_results, test_results = self._process_proposals(proposals)
@@ -228,8 +229,29 @@ class IOUSegmentationClassifier(Classifier):
             proposals[i].testMask = test_results[i][0]
             proposals[i].testScore = test_results[i][1]
 
+        # classifier_output = image.copy()
+        # for proposal in proposals:
+        #     int_mask = (proposal.testMask.astype(np.uint8)) * 255
+        # #Find largest contour
+        #     contours, _ = cv2.findContours(int_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        #     #Find bounding rect for largest contour
+        #     largest_contour = max(contours, key=cv2.contourArea)
+        
+        #     # Find bounding rect for the largest contour
+        #     x, y, w, h = cv2.boundingRect(largest_contour)
+        #     cv2.rectangle(classifier_output, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        #     cv2.circle(classifier_output, (proposal.prompt[0], proposal.prompt[1]), 50, (255, 0, 0), -1)
+        
+        # plt.imshow(classifier_output)
+        # plt.show()
+        
+
         classified_proposals = self._apply_iou_filter(proposals)
 
+        return_all = kwargs.get("return_all")
+        if return_all is not None:
+            classified_proposals = proposals
+        
         return classified_proposals
     
     def _process_proposals(self, proposals):

@@ -8,11 +8,18 @@ import numpy as np
 import yaml
 import Server
 import os
+import matplotlib.pyplot as plt
 if os.getenv('RPI', 'False').lower() == 'false':
     import DetectionVisualizer as DV
 
 with open("config.yaml", "r") as file:
     config = yaml.safe_load(file)
+
+
+min_bbox_area = 8000
+max_aspect_ratio = 10
+max_size = 0.4
+min_size = 40
 
 class Detector(ABC):
     @abstractmethod
@@ -31,23 +38,43 @@ class BasicDetector(Detector):
                  classifier:CL.Classifier,
                  merger:NMS.Merger = None
                  ):
-        self.baseline = baseline
+        self.baseline = cv2.cvtColor(baseline, cv2.COLOR_BGR2RGB)
         self.classifier = classifier
         self.proposal_generator = proposal_generator
         self.merger = merger
+        self.imshape = self.baseline.shape
 
     #Function to take in image and generate list of objects
     def detect(self, imageObj, **kwargs) -> list:
+        imageObj = cv2.cvtColor(imageObj, cv2.COLOR_BGR2RGB)
         proposals, imageObj = self.proposal_generator.generateProposals(imageObj, warp=True)
-        detections = self.classifier.classify(imageObj, proposals)
+        # before = self.baseline.copy()
+        # after = imageObj.copy()
+        
+        detections = self.classifier.classify(imageObj, proposals, return_all=False)
+        
+        # merged_bboxesBefore = [Detection.from_mask(det.baselineMask).get_as_array() for det in detections]
+        # merged_bboxesAfter = [Detection.from_mask(det.testMask).get_as_array() for det in detections]
+        # for bbox in merged_bboxesBefore:
+        #     cv2.rectangle(before, (bbox[0], bbox[1]), (bbox[0] + bbox[2], bbox[1] + bbox[3]), (0, 255, 0), 15)
+        # for bbox in merged_bboxesAfter:
+        #     cv2.rectangle(after, (bbox[0], bbox[1]), (bbox[0] + bbox[2], bbox[1] + bbox[3]), (0, 255, 0), 15)
+
         self._mergeDetections(detections)
 
-        # if os.getenv('VISUALIZE', 'False').lower() == 'true':
-        # DV.plot_detections(detections, self.baseline, imageObj)
-
+        # fig, ax = plt.subplots(1, 2, figsize=(21, 7))
+        # ax[0].imshow(before)
+        # ax[0].set_title("baseline")
+        # ax[0].axis("off")
+        # ax[1].imshow(after)
+        # ax[1].set_title("test")
+        # ax[1].axis("off")
+        # plt.show()
         #Convert the masks to a more memory efficient format easy to send over network
         stripped_detections = [Detection.from_mask(detection.testMask) for detection in detections]
         
+        #filter down detections based off of bbox
+        stripped_detections = [detection for detection in stripped_detections if evaluate_bbox(detection.get_as_array(), imshape=self.imshape)]
         # if os.getenv('VISUALIZE', 'False').lower() == 'true':
             #Get kwargs key caamera_pos from the kwargs dictionary
         camera_pos = kwargs.get('camera_pos', None)
@@ -56,7 +83,7 @@ class BasicDetector(Detector):
                            camera_pos,
                            cv2.cvtColor(self.baseline, cv2.COLOR_BGR2RGB),
                            cv2.cvtColor(imageObj, cv2.COLOR_BGR2RGB))
-
+        
         return stripped_detections
     
     def _mergeDetections(self, detections):
@@ -67,6 +94,22 @@ class BasicDetector(Detector):
 import hashlib
 import json
 
+def evaluate_bbox(bbox, imshape):
+    #Filter out detections that are too small
+    if bbox[2] < min_size or bbox[3] < min_size:
+        return False
+    #Filter out detections that are too large
+    if max(bbox[2], bbox[3]) > max_size*min(imshape[0], imshape[1]):
+        return False
+    #Filter out detections that are too tall
+    if bbox[3] > max_aspect_ratio * bbox[2]:
+        return False
+    #Filter out detections that are too wide
+    if bbox[2] > max_aspect_ratio * bbox[3]:
+        return False
+    if bbox[2]*bbox[3] < min_bbox_area:
+        return False
+    return True
 
 def generate_detector_ID(POSID:str, length = 16):
     #Use the POSID to generate a unique hash for the detector
@@ -183,7 +226,13 @@ class Detection():
             >>> detection = Detection.from_mask(mask)
         """
         int_mask = (mask.astype(np.uint8)) * 255
-        x, y, w, h = cv2.boundingRect(int_mask)
+        #Find largest contour
+        contours, _ = cv2.findContours(int_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        #Find bounding rect for largest contour
+        largest_contour = max(contours, key=cv2.contourArea)
+    
+        # Find bounding rect for the largest contour
+        x, y, w, h = cv2.boundingRect(largest_contour)
         return Detection(x, y, w, h)
 
     @staticmethod

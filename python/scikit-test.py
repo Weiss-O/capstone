@@ -165,12 +165,12 @@ for c in contours:
     if area > min_area:
         contour_areas.append(area)
         x,y,w,h = cv2.boundingRect(c)
-        cv2.rectangle(before, (x, y), (x + w, y + h), (36,255,12), 2)
-        cv2.rectangle(after, (x, y), (x + w, y + h), (36,255,12), 2)
-        cv2.rectangle(diff_box, (x, y), (x + w, y + h), (36,255,12), 2)
+        cv2.rectangle(before, (x, y), (x + w, y + h), (36,255,12), 10)
+        cv2.rectangle(after, (x, y), (x + w, y + h), (36,255,12), 10)
+        cv2.rectangle(diff_box, (x, y), (x + w, y + h), (36,255,12), 10)
         cv2.drawContours(mask, [c], 0, (255,255,255), -1)
         #print in small font the contour area next to the contour
-        cv2.putText(mask, str(area), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 2)
+        cv2.putText(mask, str(area), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 10)
         cv2.drawContours(filled_after, [c], 0, (0,255,0), -1)
         # Draw the contour on the lbp image with transparency
         overlay = lbp_img.copy()

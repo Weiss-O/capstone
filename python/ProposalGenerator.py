@@ -4,6 +4,7 @@ import ProposalPreprocessor as PP
 import numpy as np
 from skimage.metrics import structural_similarity
 import ContourAnalysis as CA
+import matplotlib.pyplot as plt
 
 #Constants:
 
@@ -63,10 +64,11 @@ class SSIMProposalGenerator(ProposalGenerator):
                 warped_image = cv2.warpAffine(image, M, (self.baseline.shape[1], self.baseline.shape[0]))
 
                 image_preprocessed = self.preprocess(warped_image)
+            else:
+                image_preprocessed = self.preprocess(image)
         except:
             image_preprocessed = self.preprocess(image)
-        else:
-            image_preprocessed = self.preprocess(image)
+            warp = False
         #Compute the SSIM between the two images
         score, diff = structural_similarity(
             self.baseline_preprocessed, image_preprocessed, full=True
@@ -87,7 +89,11 @@ class SSIMProposalGenerator(ProposalGenerator):
         #Contour Analysis
         contours, _ = cv2.findContours(threshed_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
+        mask = np.zeros(image_preprocessed.shape, dtype='uint8')
         proposals = []
+
+        bboxes=image_preprocessed.copy()
+        bboxes = cv2.cvtColor(bboxes, cv2.COLOR_GRAY2BGR)
 
         for c in contours:
             #Find contour area
@@ -96,8 +102,8 @@ class SSIMProposalGenerator(ProposalGenerator):
                 rect = cv2.minAreaRect(c)
                 (x,y), (w,h), angle = rect
                 aspect_ratio = min(w,h)/max(w,h)
-
-                if min(w, h) > 15 and max(w, h) < self.image_diagonal*0.8 and aspect_ratio > 0.15 and w*h > self.areaThreshold:
+                cv2.drawContours(mask, [c], 0, (255,255,255), -1)
+                if min(w, h) > 15 and max(w, h) < self.image_diagonal*0.5 and aspect_ratio > 0.15 and w*h > self.areaThreshold and max(w,h) < 0.5*min(self.baseline.shape[1], self.baseline.shape[0]):
                     #Find point on detection area closest to centroid
                     point = CA.get_centroid_safe(c)
                     
@@ -106,10 +112,36 @@ class SSIMProposalGenerator(ProposalGenerator):
 
                     #Append proposal to list
                     proposals.append(proposal)
+
+                    #Draw rotated rectangle in green
+                    box = cv2.boxPoints(rect)
+                    box = np.int0(box)
+                    cv2.drawContours(bboxes, [box], 0, (0, 255, 0), 10)
+                    cv2.circle(bboxes, tuple(point), 50, (255, 0, 0), -1)
+                else:
+                    box = cv2.boxPoints(rect)
+                    box = np.int0(box)
+                    cv2.drawContours(bboxes, [box], 0, (0, 255, 0), 10)
         
         print("# unfiltered proposals: ", len(proposals))
         
+
         if warp:
+            #Use matplotlib to show the difference map, the contours, bboxes, and mask
+            # fig, ax = plt.subplots(1, 4, figsize=(15, 5))
+            # ax[0].imshow(diff, cmap="gray")
+            # ax[0].set_title("Difference Map")
+            # ax[0].axis("off")
+            # ax[1].imshow(threshed_img, cmap="gray")
+            # ax[1].set_title("Thresholded Image")
+            # ax[1].axis("off")
+            # ax[2].imshow(bboxes, cmap="gray")
+            # ax[2].set_title("Bounding Boxes")
+            # ax[2].axis("off")
+            # ax[3].imshow(mask, cmap="gray")
+            # ax[3].set_title("Mask")
+            # ax[3].axis("off")
+            # plt.show()
             return proposals, warped_image
         else:
             return proposals

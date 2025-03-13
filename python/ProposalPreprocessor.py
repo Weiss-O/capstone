@@ -13,4 +13,4 @@ class NullPreprocessor(ProposalPreprocessor):
     
 class GrayscaleGaussianPreprocessor(ProposalPreprocessor):
     def preprocess(self, image) -> list:
-        return cv2.GaussianBlur(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), (5, 5), 0)
+        return cv2.GaussianBlur(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), (21, 21), 0)
