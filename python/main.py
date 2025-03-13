@@ -164,9 +164,8 @@ def point(): #This is not the full functionality. The projection functionality n
 def point_task():
     teensy.center()
     time.sleep(5) #Wait for centering
-    teensy.laser_on()
-    time.sleep(5) #Wait for laser to stabilize
-    teensy.laser_off()
+    teensy.project_cone(0, 0, 20, 5)
+    time.sleep(1)
 
 
 #Main function
