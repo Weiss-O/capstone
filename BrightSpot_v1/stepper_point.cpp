@@ -53,18 +53,14 @@ bool home_stepper() {
 
 bool point_steppers(int tilt_steps, int pan_steps) {
 
-  Serial.println("Moving Tilt");
+  Serial.println("Moving Both");
   tilt.move(tilt_steps); 
-  while (tilt.distanceToGo() != 0) {  
-      tilt.run();  // Keeps moving until it reaches the target
+  pan.move(pan_steps);
+  while (tilt.distanceToGo() != 0 | pan.distanceToGo() != 0) {  
+      if (tilt.distanceToGo() != 0) tilt.run();
+      if (pan.distanceToGo() != 0) pan.run();
   }
 
-  Serial.println("Moving Pan");
-  pan.move(pan_steps); 
-  while (pan.distanceToGo() != 0) {  
-      pan.run();  // Keeps moving until it reaches the target
-  }
-  Serial.println("Done moving");
   tilt.disableOutputs(); //GETS REALLY HOT IF YOU DONT DO THIS BE CAREFUL!
   pan.disableOutputs();
   // fail if it doesn't hit the desired position
