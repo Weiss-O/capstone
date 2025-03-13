@@ -48,7 +48,7 @@ current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 for i, point in enumerate(points):
     #wait for input
     theta_actual, phi_actual = teensy.point_camera(point[0], point[1]) #TODO: Fix the Arduino so that the positiv
-    time.sleep(1) #Wait for the camera to stabilize
+    time.sleep(4) #Wait for the camera to stabilize
 
     baseline_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "baseline")
     if not os.path.exists(baseline_dir):
@@ -56,8 +56,8 @@ for i, point in enumerate(points):
 
     image_path = os.path.join(baseline_dir, f"baseline{i}_{current_time}.jpg")
     camera.capture_file(image_path)
+    time.sleep(3)
     teensy.motors_off()
-    time.sleep(2)
 
     config["baseline"][f"POS{i}"] = {"image_path": image_path, "camera_pos": [float(theta_actual), float(phi_actual)]}
 
