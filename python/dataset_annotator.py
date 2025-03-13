@@ -54,6 +54,7 @@ def annotate_images(directory, baseline_photo=None):
     baseline_path = os.path.join(directory, image_list[0])
     baseline_image = cv2.imread(baseline_path)
     if baseline_image is not None:
+        baseline_image = resize_image(baseline_image)
         cv2.namedWindow("Baseline")
         cv2.imshow("Baseline", baseline_image)
     
@@ -66,14 +67,26 @@ def annotate_images(directory, baseline_photo=None):
             print(f"Error loading {image_path}")
             continue
         
+        current_image = resize_image(current_image)
         cv2.imshow("Annotation", current_image)
         key = cv2.waitKey(0)  # Wait for user input
         
         if key == ord('n'):
-            annotations.append({"photo_path": image_path, "annotations": sorted(current_annotations)})
-    
+            scaled_annotations = scale_annotations_back(current_annotations, current_image.shape[1], image_path)
+            annotations.append({"photo_path": image_path, "annotations": sorted(scaled_annotations)})
+
     cv2.destroyAllWindows()
     save_annotations(directory)
+
+def resize_image(image, width=900):
+    height = int(image.shape[0] * (width / image.shape[1]))
+    return cv2.resize(image, (width, height))
+
+def scale_annotations_back(annotations, current_width, image_path):
+    original_image = cv2.imread(image_path)
+    scale_factor = original_image.shape[1] / current_width
+    return [(int(x * scale_factor), int(y * scale_factor), int(w * scale_factor), int(h * scale_factor)) for (x, y, w, h) in annotations]
+
 
 def save_annotations(directory):
     dataset = {"images": annotations}
