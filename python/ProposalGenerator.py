@@ -33,35 +33,38 @@ class SSIMProposalGenerator(ProposalGenerator):
     def generateProposals(self, image, **kwargs) -> list:
         kwargs = kwargs
         warp = kwargs.get("warp", False)
-        if warp:
-            # Detect the ORB keypoints and descriptors
-            orb = cv2.ORB_create()
-            kp1, des1 = orb.detectAndCompute(self.baseline, None)
-            kp2, des2 = orb.detectAndCompute(image, None)
+        try:
+            if warp:
+                # Detect the ORB keypoints and descriptors
+                orb = cv2.ORB_create()
+                kp1, des1 = orb.detectAndCompute(self.baseline, None)
+                kp2, des2 = orb.detectAndCompute(image, None)
 
-            # Match keypoints using BFMatcher
-            bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-            matches = bf.match(des1, des2)
-            matches = sorted(matches, key=lambda x: x.distance)
+                # Match keypoints using BFMatcher
+                bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+                matches = bf.match(des1, des2)
+                matches = sorted(matches, key=lambda x: x.distance)
 
-            # Ensure there are enough matches
-            if len(matches) < 4:
-                raise ValueError("Not enough matches found between the images")
+                # Ensure there are enough matches
+                if len(matches) < 4:
+                    raise ValueError("Not enough matches found between the images")
 
-            # Extract point correspondences
-            dst_pts = np.float32([kp1[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
-            src_pts = np.float32([kp2[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
+                # Extract point correspondences
+                dst_pts = np.float32([kp1[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
+                src_pts = np.float32([kp2[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
 
-            # Assert that the number of points matches
-            assert len(dst_pts) == len(src_pts), "Number of points does not match"
+                # Assert that the number of points matches
+                assert len(dst_pts) == len(src_pts), "Number of points does not match"
 
-            # Compute homography (or affine if only rotation/translation)
-            M, mask = cv2.estimateAffinePartial2D(src_pts, dst_pts, method=cv2.RANSAC)
+                # Compute homography (or affine if only rotation/translation)
+                M, mask = cv2.estimateAffinePartial2D(src_pts, dst_pts, method=cv2.RANSAC)
 
-            # Warp image
-            warped_image = cv2.warpAffine(image, M, (self.baseline.shape[1], self.baseline.shape[0]))
+                # Warp image
+                warped_image = cv2.warpAffine(image, M, (self.baseline.shape[1], self.baseline.shape[0]))
 
-            image_preprocessed = self.preprocess(warped_image)
+                image_preprocessed = self.preprocess(warped_image)
+        except:
+            image_preprocessed = self.preprocess(image)
         else:
             image_preprocessed = self.preprocess(image)
         #Compute the SSIM between the two images
