@@ -53,18 +53,20 @@ bool home_stepper() {
 
 bool point_steppers(int tilt_steps, int pan_steps) {
 
-  pan.move(pan_steps); 
-  while (pan.distanceToGo() != 0) {  
-      pan.run();  // Keeps moving until it reaches the target
-  }
-  
+  echo("Moving Tilt");
   tilt.move(tilt_steps); 
   while (tilt.distanceToGo() != 0) {  
       tilt.run();  // Keeps moving until it reaches the target
   }
 
+  echo("Moving Pan");
+  pan.move(pan_steps); 
+  while (pan.distanceToGo() != 0) {  
+      pan.run();  // Keeps moving until it reaches the target
+  }
+  echo("Done moving");
+  tilt.disableOutputs(); //GETS REALLY HOT IF YOU DONT DO THIS BE CAREFUL!
   pan.disableOutputs();
-  tilt.disableOutputs(); //GETS REALLY HOT IF YOU DO THIS BE CAREFUL!
   // fail if it doesn't hit the desired position
 
   return true;
