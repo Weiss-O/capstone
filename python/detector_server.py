@@ -98,7 +98,8 @@ def handle_client(client_socket):
                     
                     #Convert to array for sending to client
                     detections = [detection.get_as_array() for detection in detections]
-                except:
+                except Exception as e:
+                    print(f"Error: {e}")
                     detections = []
                 finally:
                     #TODO: Send the detections
