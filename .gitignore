@@ -168,6 +168,7 @@ python/KNN_training
 python/2024.7.6.12.30.59
 python/baseline
 .env
+config.yaml
 
 
 
