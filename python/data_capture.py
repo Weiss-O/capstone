@@ -31,6 +31,7 @@ if os.environ.get('RPI', 'False').lower()== 'true':
     if not teensy.is_open:
         raise Exception("Controller not connected")
     time.sleep(2)
+    teensy.home()
 
 
 test_date_string = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -47,7 +48,7 @@ while True:
         try:
             pos = config["baseline"][POSID]["camera_pos"] #Get pos coords
             theta_actual, phi_actual = teensy.point_camera(pos[0], pos[1]) #Move to pos
-            time.sleep(1) #Let camera settle
+            time.sleep(2) #Let camera settle
             camera.capture_and_send_remote(server, "", pos=pos)
             if Server.get_response(server) != b'ACK':
                 print("Error: Did not receive ACK")
