@@ -91,17 +91,20 @@ def handle_client(client_socket):
                 image = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_COLOR)
                 print(f"Received image of size {len(image_bytes)} bytes")
 
-                #Detect objects in the image
-                detections = detectors[detector_id]["detector"].detect(image,
-                                                                       camera_pos=detectors[detector_id]["camera_pos"]) #Returns a list of Detection objects
-                
-                #Convert to array for sending to client
-                detections = [detection.get_as_array() for detection in detections]
-
-                #TODO: Send the detections
-                print("Sending detections to client:")
-                print(detections)
-                Server.send_detections(client_socket, detections)
+                try:
+                    #Detect objects in the image
+                    detections = detectors[detector_id]["detector"].detect(image,
+                                                                        camera_pos=detectors[detector_id]["camera_pos"]) #Returns a list of Detection objects
+                    
+                    #Convert to array for sending to client
+                    detections = [detection.get_as_array() for detection in detections]
+                except:
+                    detections = []
+                finally:
+                    #TODO: Send the detections
+                    print("Sending detections to client:")
+                    print(detections)
+                    Server.send_detections(client_socket, detections)
 
             elif command == b'STORE_IMAGE':
                 #Receive the image
