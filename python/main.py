@@ -57,7 +57,7 @@ class Occupied(State):
                 teensy.home()
         PERSON_DETECTED, _ = scan()
 
-        if os.environ.get('PD', 'Auto').lower()== 'manual':
+        if os.environ.get('PERSON_DETECTION', 'False').lower()== 'true':
             PD = input("Is there a person in the room? (Y/n)")
             PERSON_DETECTED = PD == "Y"
 
