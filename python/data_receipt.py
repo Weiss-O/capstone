@@ -49,7 +49,7 @@ def handle_client(s):
                 img_path = os.path.join(dir_name, pos, img_name)
                 cv2.imwrite(img_path, image)
                 print(f"Saved image to {img_path}")
-                Server.send_bytes('ACK')
+                Server.send_bytes(client_socket, b'ACK')
 
             else:
                 print(f"Unknown command: {command}")

@@ -49,6 +49,8 @@ while True:
             theta_actual, phi_actual = teensy.point_camera(pos[0], pos[1]) #Move to pos
             time.sleep(1) #Let camera settle
             camera.capture_and_send_remote(server, "", pos=pos)
+            if Server.get_response(server) != b'ACK':
+                print("Error: Did not receive ACK")
         except:
             teensy.home()
             exit()
