@@ -1,0 +1,63 @@
+images:
+- annotations: []
+  photo_path: python/scans/2025-03-13_00-38-51/45.00_60.00/img_0.jpg
+- annotations: []
+  photo_path: python/scans/2025-03-13_00-38-51/45.00_60.00/img_1.jpg
+- annotations:
+  - !!python/tuple
+    - 1858
+    - 66
+    - 599
+    - 721
+  - !!python/tuple
+    - 2206
+    - 1203
+    - 204
+    - 189
+  - !!python/tuple
+    - 3850
+    - 1213
+    - 768
+    - 977
+  - !!python/tuple
+    - 4126
+    - 5
+    - 486
+    - 435
+  photo_path: python/scans/2025-03-13_00-38-51/45.00_60.00/img_10.jpg
+- annotations: []
+  photo_path: python/scans/2025-03-13_00-38-51/45.00_60.00/img_2.jpg
+- annotations: []
+  photo_path: python/scans/2025-03-13_00-38-51/45.00_60.00/img_3.jpg
+- annotations: []
+  photo_path: python/scans/2025-03-13_00-38-51/45.00_60.00/img_4.jpg
+- annotations:
+  - !!python/tuple
+    - 4500
+    - 947
+    - 138
+    - 286
+  photo_path: python/scans/2025-03-13_00-38-51/45.00_60.00/img_5.jpg
+- annotations: []
+  photo_path: python/scans/2025-03-13_00-38-51/45.00_60.00/img_6.jpg
+- annotations: []
+  photo_path: python/scans/2025-03-13_00-38-51/45.00_60.00/img_7.jpg
+- annotations:
+  - !!python/tuple
+    - 2877
+    - 30
+    - 701
+    - 706
+  photo_path: python/scans/2025-03-13_00-38-51/45.00_60.00/img_8.jpg
+- annotations:
+  - !!python/tuple
+    - 2954
+    - 35
+    - 716
+    - 696
+  - !!python/tuple
+    - 4003
+    - -20
+    - 476
+    - 373
+  photo_path: python/scans/2025-03-13_00-38-51/45.00_60.00/img_9.jpg
