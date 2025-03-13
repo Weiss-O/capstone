@@ -38,7 +38,7 @@ def handle_client(s):
                 #Wait for the client to send the image name
                 camera_pos = Server.recv_coords(s) #arry with 2 floats
                 #Create directory named after position
-                pos = f"{camera_pos[0]}_{camera_pos[1]}"
+                pos = f"{camera_pos[0]:.2f}_{camera_pos[1]:.2f}"
                 os.makedirs(os.path.join(dir_name, pos), exist_ok=True)
                 print(f"Received scan at pos: {pos}")
 
@@ -50,6 +50,7 @@ def handle_client(s):
                 cv2.imwrite(img_path, image)
                 print(f"Saved image to {img_path}")
                 Server.send_bytes(client_socket, b'ACK')
+                count += 1
 
             else:
                 print(f"Unknown command: {command}")
