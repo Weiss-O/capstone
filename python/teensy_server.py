@@ -97,8 +97,9 @@ threading.Thread(target=read_serial, daemon=True).start()
 def index():
     if request.method == "POST":
         command = request.form["command"]
-        serial_manager.send_command(command)
         messages.append(f"Sent command: {command}")
+        serial_manager.send_command(command)
+        return jsonify({"status": "sent", "command": command})
     return '''
         <form method="post">
             <input type="text" name="command" placeholder="Enter command">
