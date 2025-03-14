@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <AccelStepper.h>
 
-#define TILT_STEPPER_SPEED 150
+#define TILT_STEPPER_SPEED 80
 #define TILT_STEPPER_ACCEL 2000
 #define PAN_STEPPER_SPEED 150
 #define PAN_STEPPER_ACCEL 2000
