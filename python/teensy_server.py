@@ -21,6 +21,7 @@ timeout = 20  # Timeout in seconds
 while not ports and (time.time() - start_time) < timeout:
     ports = glob.glob('/dev/ttyACM*')
     time.sleep(1)
+messages.append(f"Detected teensy on port: {ports[0]}")
 
 if not ports:
     raise Exception("No serial ports found within the timeout period")
@@ -34,6 +35,9 @@ while not is_open and (time.time() - start_time) < timeout:
         is_open = ser.is_open
     except:
         time.sleep(1)
+if not is_open:
+    raise Exception("Failed to open serial port")
+messages.append(f"Opened serial port: {port}")
 ser.reset_input_buffer()
 
 def read_serial():
