@@ -52,12 +52,24 @@ def read_serial():
 # Start background thread to read from serial
 threading.Thread(target=read_serial, daemon=True).start()
 
+def read_serial():
+    global messages
+    while True:
+        if ser.in_waiting > 0:
+            line = ser.readline().decode().strip()
+            messages.append(line)
+            if len(messages) > 100:  # Limit stored messages
+                messages.pop(0)
+        time.sleep(0.1)  # Prevent high CPU usage
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
         command = request.form["command"]
-        ser.write((command + "\n").encode())  # Send command over serial
-        return f"Sent: {command}"
+        ser.write((command + "\n").encode())
+        ser.flush()
+        time.sleep(0.1)
+        return jsonify({"status": "sent", "command": command})
 
     return '''
         <form method="post">
@@ -66,6 +78,17 @@ def index():
         </form>
         <div id="logs"></div>
         <script>
+            async function sendCommand() {
+                let command = document.querySelector("input[name='command']").value;
+                let response = await fetch("/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: "command=" + encodeURIComponent(command)
+                });
+                document.querySelector("input[name='command']").value = "";
+            }
+            document.querySelector("button").onclick = sendCommand;
+            
             async function fetchLogs() {
                 let response = await fetch("/logs");
                 let data = await response.json();
@@ -74,6 +97,7 @@ def index():
             setInterval(fetchLogs, 1000);
         </script>
     '''
+
 
 @app.route("/logs")
 def get_logs():
