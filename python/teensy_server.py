@@ -1,15 +1,40 @@
 from flask import Flask, request, render_template, jsonify
 import serial
 import threading
+import glob
+import time
+
 
 app = Flask(__name__)
 
-# Change this to match your Teensy's serial port
-SERIAL_PORT = "/dev/ttyACM0"
-BAUD_RATE = 115200
-
-ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
 messages = []  # Store received messages
+
+settings = {
+    "baudrate": 9600,
+    "timeout": 1
+}
+messages.append("Waiting until port is detected")
+ports = None
+start_time = time.time()
+timeout = 20  # Timeout in seconds
+
+while not ports and (time.time() - start_time) < timeout:
+    ports = glob.glob('/dev/ttyACM*')
+    time.sleep(1)
+
+if not ports:
+    raise Exception("No serial ports found within the timeout period")
+    
+port = ports[0]
+is_open = False
+start_time = time.time()
+while not is_open and (time.time() - start_time) < timeout:
+    try:
+        ser = serial.Serial(port, settings["baudrate"], timeout = settings["timeout"])
+        is_open = ser.is_open
+    except:
+        time.sleep(1)
+ser.reset_input_buffer()
 
 def read_serial():
     global messages
