@@ -3,9 +3,9 @@
 #include <Arduino.h>
 #include <AccelStepper.h>
 
-#define TILT_STEPPER_SPEED 80
+#define TILT_STEPPER_SPEED 150
 #define TILT_STEPPER_ACCEL 2000
-#define PAN_STEPPER_SPEED 150
+#define PAN_STEPPER_SPEED 400
 #define PAN_STEPPER_ACCEL 2000
 
 const int stepsPerRevolution = 2048; // Steps for full rotation
