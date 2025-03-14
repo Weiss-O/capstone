@@ -69,12 +69,12 @@ def index():
         ser.write((command + "\n").encode())
         ser.flush()
         time.sleep(0.1)
-        return jsonify({"status": "sent", "command": command})
+        return '', 204
 
     return '''
         <form method="post">
             <input type="text" name="command" placeholder="Enter command">
-            <button type="submit">Send</button>
+            <button type="button" onclick="sendCommand()">Send</button>
         </form>
         <div id="logs"></div>
         <script>
