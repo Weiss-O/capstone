@@ -41,8 +41,8 @@ void pi_communications(String command) {
   }
 
   else if (commandChar == 'Z'){
-    Serial.println("autoflash success");
     disableMotors(); //Adding comment to introduce a change for testing autoflash 7
+    Serial.println("S");
   }
 
   else if (commandChar == 'L'){ //L dur mag freq
