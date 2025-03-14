@@ -3,7 +3,8 @@ import serial
 import threading
 import glob
 import time
-
+import os
+import signal
 
 app = Flask(__name__)
 
@@ -13,64 +14,66 @@ settings = {
     "baudrate": 9600,
     "timeout": 1
 }
-messages.append("Waiting until port is detected")
-ports = None
-start_time = time.time()
-timeout = 20  # Timeout in seconds
 
-while not ports and (time.time() - start_time) < timeout:
+def find_teensy():
+    """Finds the connected Teensy device."""
     ports = glob.glob('/dev/ttyACM*')
-    time.sleep(1)
-messages.append(f"Detected teensy on port: {ports[0]}")
+    return ports[0] if ports else None
 
-if not ports:
-    raise Exception("No serial ports found within the timeout period")
-    
-port = ports[0]
-is_open = False
-start_time = time.time()
-while not is_open and (time.time() - start_time) < timeout:
-    try:
-        ser = serial.Serial(port, settings["baudrate"], timeout = settings["timeout"])
-        is_open = ser.is_open
-    except:
-        time.sleep(1)
-if not is_open:
-    raise Exception("Failed to open serial port")
-messages.append(f"Opened serial port: {port}")
-ser.reset_input_buffer()
+class SerialManager:
+    def __init__(self):
+        self.ser = None
+        self.port = find_teensy()
+        self.is_open = False
+
+    def connect(self):
+        """Attempts to open the serial port, if available."""
+        if self.port and not self.is_open:
+            try:
+                self.ser = serial.Serial(self.port, settings["baudrate"], timeout=settings["timeout"])
+                self.is_open = self.ser.is_open
+                messages.append(f"Connected to {self.port}")
+            except Exception as e:
+                messages.append(f"Error opening serial port: {e}")
+                self.is_open = False
+
+    def disconnect(self):
+        """Closes the serial connection."""
+        if self.ser:
+            self.ser.close()
+            self.is_open = False
+
+    def send_command(self, command):
+        """Sends a command if the serial port is open."""
+        if self.is_open and self.ser:
+            try:
+                self.ser.write((command + "\n").encode())
+                self.ser.flush()
+                time.sleep(0.1)
+            except Exception as e:
+                messages.append(f"Serial write error: {e}")
+                self.is_open = False
+
+serial_manager = SerialManager()
 
 def read_serial():
-    global messages
+    """Continuously reads data from the serial port."""
     while True:
-        if ser.in_waiting > 0:
-            line = ser.readline().decode().strip()
-            messages.append(line)
-            if len(messages) > 100:  # Limit stored messages
-                messages.pop(0)
-
-# Start background thread to read from serial
-threading.Thread(target=read_serial, daemon=True).start()
-
-def read_serial():
-    global messages
-    while True:
-        if ser.in_waiting > 0:
-            line = ser.readline().decode().strip()
+        if serial_manager.is_open and serial_manager.ser.in_waiting > 0:
+            line = serial_manager.ser.readline().decode().strip()
             messages.append(line)
             if len(messages) > 100:  # Limit stored messages
                 messages.pop(0)
         time.sleep(0.1)  # Prevent high CPU usage
 
+# Start background thread to read from serial
+threading.Thread(target=read_serial, daemon=True).start()
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
         command = request.form["command"]
-        ser.write((command + "\n").encode())
-        ser.flush()
-        time.sleep(0.1)
-        return '', 204
-
+        serial_manager.send_command(command)
     return '''
         <form method="post">
             <input type="text" name="command" placeholder="Enter command">
@@ -80,15 +83,13 @@ def index():
         <script>
             async function sendCommand() {
                 let command = document.querySelector("input[name='command']").value;
-                let response = await fetch("/", {
+                await fetch("/", {
                     method: "POST",
                     headers: { "Content-Type": "application/x-www-form-urlencoded" },
                     body: "command=" + encodeURIComponent(command)
                 });
                 document.querySelector("input[name='command']").value = "";
             }
-            document.querySelector("button").onclick = sendCommand;
-            
             async function fetchLogs() {
                 let response = await fetch("/logs");
                 let data = await response.json();
@@ -98,10 +99,17 @@ def index():
         </script>
     '''
 
-
 @app.route("/logs")
 def get_logs():
     return jsonify({"logs": messages})
 
+@app.route("/shutdown", methods=["POST"])
+def shutdown():
+    """Gracefully shuts down the server."""
+    messages.append("Shutting down server...")
+    os.kill(os.getpid(), signal.SIGTERM)
+    return "Shutting down...", 200
+
 if __name__ == "__main__":
+    serial_manager.connect()  # Connect on startup
     app.run(host="0.0.0.0", port=5000)
