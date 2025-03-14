@@ -99,7 +99,7 @@ def index():
         command = request.form["command"]
         messages.append(f"Sent command: {command}")
         serial_manager.send_command(command)
-        return jsonify({"status": "sent", "command": command})
+        return "", 204
     return '''
         <form method="post">
             <input type="text" name="command" placeholder="Enter command">
