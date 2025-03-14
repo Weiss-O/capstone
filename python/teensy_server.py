@@ -98,6 +98,7 @@ def index():
     if request.method == "POST":
         command = request.form["command"]
         serial_manager.send_command(command)
+        messages.append(f"Sent command: {command}")
     return '''
         <form method="post">
             <input type="text" name="command" placeholder="Enter command">
@@ -106,13 +107,16 @@ def index():
         <div id="logs"></div>
         <script>
             async function sendCommand() {
-                let command = document.querySelector("input[name='command']").value;
+                let commandInput = document.querySelector("input[name='command']");
+                let command = commandInput.value;
+                if (!command.trim()) return;
                 await fetch("/", {
                     method: "POST",
                     headers: { "Content-Type": "application/x-www-form-urlencoded" },
                     body: "command=" + encodeURIComponent(command)
                 });
-                document.querySelector("input[name='command']").value = "";
+                commandInput.value = "";
+                fetchLogs();
             }
             async function fetchLogs() {
                 let response = await fetch("/logs");
