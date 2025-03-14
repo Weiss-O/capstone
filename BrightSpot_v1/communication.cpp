@@ -41,7 +41,7 @@ void pi_communications(String command) {
   }
 
   else if (commandChar == 'Z'){
-    disableMotors(); //Adding comment to introduce a change for testing autoflash 7
+    disableMotors(); //Adding comment to introduce a change for testing autoflash 8
     Serial.println("S");
   }
 
