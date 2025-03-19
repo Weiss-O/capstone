@@ -257,19 +257,19 @@ bool project_circle(int duration, float magnitude, float frequency) {
     return false;
   }
   
-  unsigned long num_cycles = 1000000*duration/Ts;
+  unsigned long num_samples = 1000000*duration/Ts;
   unsigned long start_time = micros();
 
   digitalWrite(LASER_PIN, HIGH);
 
   // repeat for the appropriate number of cycles
-  for (int i=0; i<=num_cycles; i++) {
+  for (int i=0; i<=num_samples; i++) {
     unsigned long loop_start = micros();
 
     // Get the reference angle from the lookup table
     unsigned long timeInCycle = (loop_start-start_time) % period_us;  // Time within one period
 
-    int tableIndex = map(timeInCycle, 0, period_us, 0, tableSize - 1);  // Map time to table index
+    int tableIndex = map(timeInCycle, 0, period_us, 0, tableSize);  // Map time to table index
 
     float refAnglex = x_scale*sineLookup[tableIndex];
     float refAngley = 0.0;
@@ -295,7 +295,7 @@ bool project_circle(int duration, float magnitude, float frequency) {
     float pwm_x = command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, command_x);
     float pwm_y = command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, command_y);
     
-    if (loop_start % 5000 < 100) {
+    if (i % 2 == 0) {
       Serial.print(loop_start-start_time);
       Serial.print(",");
       Serial.print(mirrorAngley);
