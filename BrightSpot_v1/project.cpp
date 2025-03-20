@@ -9,7 +9,7 @@ const float ki_x = 0.1;
 const float kd_x = 100.0;
 const float x_scale = 0.7;
 
-const float kp_y = 400.0;
+const float kp_y = 200.0;
 const float ki_y = 0.1;
 const float kd_y = 150;
 
