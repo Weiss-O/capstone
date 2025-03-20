@@ -4,16 +4,16 @@
 
 const float pwmFrequency = 500;
 
-const float kp_x = 550.0;
+const float kp_x = 450.0;
 const float ki_x = 0.1;
 const float kd_x = 100.0;
 const float x_scale = 0.7;
 
-const float kp_y = 700.0;
+const float kp_y = 500.0;
 const float ki_y = 0.1;
 const float kd_y = 150;
 
-const float kp_c = 50;
+const float kp_c = 55;
 const float ki_c = 0.5;
 const float kd_c = 0;
 
