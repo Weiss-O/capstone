@@ -14,7 +14,7 @@ const float ki_y = 0.1;
 const float kd_y = 100;
 
 const float kp_c = 40;
-const float ki_c = 0.01;
+const float ki_c = 0.05;
 const float kd_c = 0;
 
 float sumErr_x = 0.0;
