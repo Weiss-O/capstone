@@ -13,9 +13,9 @@ const float kp_y = 600.0;
 const float ki_y = 0.1;
 const float kd_y = 100;
 
-const float kp_c = 60;
+const float kp_c = 50;
 const float ki_c = 0.5;
-const float kd_c = -1;
+const float kd_c = 0;
 
 float sumErr_x = 0.0;
 float e_prev_x = 0.0;
