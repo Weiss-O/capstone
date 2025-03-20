@@ -15,7 +15,7 @@ const float kd_y = 150;
 
 const float kp_c = 50;
 const float ki_c = 0.5;
-const float kd_c = 1;
+const float kd_c = 0;
 
 float sumErr_x = 0.0;
 float e_prev_x = 0.0;
@@ -24,7 +24,7 @@ float sumErr_y = 0.0;
 float e_prev_y = 0.0;
 
 const float Ts = 250; // sample time in micros
-const int minPWM = 2000;
+const int minPWM = 1000;
 const int pwmMax = 32767;
 const int threshold = 200;
 
@@ -42,7 +42,7 @@ const int x_galvo_pin = GALVO_POS_X_R;
 const int y_galvo_pin = GALVO_POS_Y_R;
 
 void calibrate_galvo(){
-  int commandSpeed = 4000;
+  int commandSpeed = 2000;
   // write motors to 3000 in one direction
   command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, commandSpeed);
   command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, commandSpeed);
