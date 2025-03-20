@@ -252,8 +252,10 @@ bool project_circle(int duration, float magnitude, float frequency) {
   }
 
   // step to zero
+  Serial.println("Starting zero")
   bool start_status = 0;
   start_status = center_mirrors_PID(0.75);
+  Serial.println("done zero")
 
   if (!start_status) {
     Serial.println("failed to center")
