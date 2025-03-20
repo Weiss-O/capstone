@@ -13,8 +13,8 @@ const float kp_y = 600.0;
 const float ki_y = 0.1;
 const float kd_y = 100;
 
-const float kp_c = 60;
-const float ki_c = 0;
+const float kp_c = 30;
+const float ki_c = 0.1;
 const float kd_c = 0;
 
 float sumErr_x = 0.0;
