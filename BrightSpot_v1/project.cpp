@@ -13,7 +13,7 @@ const float kp_y = 600.0;
 const float ki_y = 0.1;
 const float kd_y = 100;
 
-const float kp_c = 65;
+const float kp_c = 55;
 const float ki_c = 0.05;
 const float kd_c = 0;
 
@@ -24,7 +24,7 @@ float sumErr_y = 0.0;
 float e_prev_y = 0.0;
 
 const float Ts = 250; // sample time in micros
-const int minPWM = 1200;
+const int minPWM = 900;
 const int pwmMax = 32767;
 const int threshold = 200;
 
