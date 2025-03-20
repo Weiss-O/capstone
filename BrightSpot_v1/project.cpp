@@ -2,7 +2,7 @@
 #include "config.h"
 #include <Arduino.h>
 
-const float pwmFrequency = 500;
+const float pwmFrequency = 1000;
 
 const float kp_x = 450.0;
 const float ki_x = 0.1;
