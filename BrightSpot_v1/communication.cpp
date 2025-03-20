@@ -74,7 +74,7 @@ void pi_communications(String command) {
 
     }
     else{
-      Serial.println('F');
+      Serial.println('F???');
     }
   }
 
