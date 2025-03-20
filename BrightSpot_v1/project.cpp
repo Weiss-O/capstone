@@ -14,7 +14,7 @@ const float ki_y = 0.1;
 const float kd_y = 100;
 
 const float kp_c = 55;
-const float ki_c = 0.05;
+const float ki_c = 0.07;
 const float kd_c = 0;
 
 float sumErr_x = 0.0;
@@ -179,7 +179,7 @@ bool center_mirrors_PID(float threshold_error) {
 
   command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, 0);
   command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, 0);
-  delay(2000);
+  delay(500);
   command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, 0);
   command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, 0);
 
@@ -253,9 +253,10 @@ bool project_circle(int duration, float magnitude, float frequency) {
 
   // step to zero
   bool start_status = 0;
-  start_status = center_mirrors_PID(0.5);
+  start_status = center_mirrors_PID(0.75);
 
   if (!start_status) {
+    Serial.println("failed to center")
     return false;
   }
   
@@ -322,7 +323,7 @@ bool project_circle(int duration, float magnitude, float frequency) {
   sumErr_x = 0;
 
   digitalWrite(LASER_PIN, LOW);
-  bool end_status = center_mirrors_PID(0.5);
+  bool end_status = center_mirrors_PID(0.75);
   return true;
 
 }
