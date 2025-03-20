@@ -13,8 +13,8 @@ const float kp_y = 600.0;
 const float ki_y = 0.1;
 const float kd_y = 150;
 
-const float kp_c = 55;
-const float ki_c = 0.8;
+const float kp_c = 50;
+const float ki_c = 0.5;
 const float kd_c = 1;
 
 float sumErr_x = 0.0;
@@ -42,7 +42,7 @@ const int x_galvo_pin = GALVO_POS_X_R;
 const int y_galvo_pin = GALVO_POS_Y_R;
 
 void calibrate_galvo(){
-  int commandSpeed = 6000;
+  int commandSpeed = 4000;
   // write motors to 3000 in one direction
   command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, commandSpeed);
   command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, commandSpeed);
