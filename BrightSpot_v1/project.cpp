@@ -4,12 +4,12 @@
 
 const float pwmFrequency = 500;
 
-const float kp_x = 350.0;
+const float kp_x = 550.0;
 const float ki_x = 0.1;
 const float kd_x = 100.0;
 const float x_scale = 0.7;
 
-const float kp_y = 600.0;
+const float kp_y = 700.0;
 const float ki_y = 0.1;
 const float kd_y = 150;
 
@@ -42,7 +42,7 @@ const int x_galvo_pin = GALVO_POS_X_R;
 const int y_galvo_pin = GALVO_POS_Y_R;
 
 void calibrate_galvo(){
-  int commandSpeed = 2000;
+  int commandSpeed = 3000;
   // write motors to 3000 in one direction
   command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, commandSpeed);
   command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, commandSpeed);
