@@ -180,7 +180,10 @@ class SSIMProposalGenerator(ProposalGenerator):
             ax[3].axis("off")
             timeStamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
             root_dir = os.path.dirname(os.path.abspath(__file__))+ "/"
-            output_path = os.path.join(root_dir, f"output/proposal_gen_{timeStamp}.jpg")
+            root_dir = os.path.join(root_dir, "output")
+            if not os.path.exists(root_dir):
+                os.makedirs(root_dir)
+            output_path = os.path.join(root_dir, f"proposal_gen_{timeStamp}.jpg")
             plt.savefig(output_path)
             plt.close()
             return proposals, warped_image
