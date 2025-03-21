@@ -88,7 +88,7 @@ def read_serial():
         if serial_manager.is_open and serial_manager.ser.in_waiting > 0:
             line = serial_manager.ser.readline().decode().strip()
             messages.append(line)
-            if len(messages) > 100:  # Limit stored messages
+            if len(messages) > 300:  # Limit stored messages
                 messages.pop(0)
         time.sleep(0.1)  # Prevent high CPU usage
 
@@ -113,7 +113,7 @@ def index():
                 let commandInput = document.querySelector("input[name='command']");
                 let command = commandInput.value;
                 if (!command.trim()) return;
-                await fetch("http://rpi:5000/", {
+                await fetch("/", {
                     method: "POST",
                     headers: { "Content-Type": "application/x-www-form-urlencoded" },
                     body: "command=" + encodeURIComponent(command)
@@ -122,7 +122,7 @@ def index():
                 fetchLogs();
             }
             async function fetchLogs() {
-                let response = await fetch("http://rpi:5000/logs");
+                let response = await fetch("/logs");
                 let data = await response.json();
                 document.getElementById("logs").innerHTML = data.logs.join("<br>");
             }
