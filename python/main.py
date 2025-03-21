@@ -164,7 +164,7 @@ def point(): #This is not the full functionality. The projection functionality n
 def point_task():
     teensy.center()
     time.sleep(5) #Wait for centering
-    teensy.project_cone(2.35, 2.35, 20, 10)
+    teensy.project_cone(2.35, 2.35, 20, 5)
     time.sleep(1)
 
 

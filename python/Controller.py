@@ -108,6 +108,7 @@ class Controller():
 
         amp = max(alpha_int, beta_int)
         command = CommandGenerator.generate_cone_command(alpha_int, freq, duration)
+        print(command)
         self.ser.write(command.encode())
         self.ser.flush()
 
@@ -155,7 +156,7 @@ class CommandGenerator():
         return f"P {theta_steps} {phi_steps}\n"
         
     def generate_cone_command(mag_int, freq_int, dur_int):
-        return f"L {mag_int} {freq_int} {dur_int}\n"
+        return f"L {dur_int} {mag_int} {freq_int}\n"
     
     HOME_COMMAND = "H2\n"
     ZERO_COMMAND = "Z2\n"
