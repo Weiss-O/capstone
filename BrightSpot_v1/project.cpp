@@ -4,7 +4,7 @@
 
 const float pwmFrequency = 1000;
 
-const float kp_x = 600.0;
+const float kp_x = 750.0;
 const float ki_x = 0.1;
 const float kd_x = 150;
 const float x_scale = 0.7;
