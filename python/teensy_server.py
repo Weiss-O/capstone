@@ -1,4 +1,5 @@
 from flask import Flask, request, render_template, jsonify
+from flask_cors import CORS
 import serial
 import threading
 import glob
@@ -7,6 +8,7 @@ import os
 import signal
 
 app = Flask(__name__)
+CORS(app)
 
 messages = []  # Store received messages
 
