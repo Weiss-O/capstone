@@ -34,7 +34,7 @@ def create_detector(baseline_image):
     return detector
 
 
-def evaluate(detections: List[List[int]], baseline_annotations: List[List[int]], test_annotations: List[List[int]], baseline_img, test_img, M=None) -> Tuple[int, int]:
+def evaluate(detections: List[List[int]], baseline_annotations: List[List[int]], test_annotations: List[List[int]], M=None) -> Tuple[int, int]:
     """
     Evaluate true and false positives based on bounding box associations.
     
@@ -90,35 +90,35 @@ def evaluate(detections: List[List[int]], baseline_annotations: List[List[int]],
     
     #visualize the bboxes. green for new, red for old, blue for consistent. yellow are baseline bboxes, white are detection bboxes
 
-    # for i, bbox in enumerate(baseline_annotations):
-    #     color = (0, 255, 255)
-    #     if i in test_to_baseline.values():
-    #         color = (255, 0, 0)
-    #     cv.rectangle(baseline_img, (bbox[0], bbox[1]), (bbox[0] + bbox[2], bbox[1] + bbox[3]), color, 10)
+    for i, bbox in enumerate(baseline_annotations):
+        color = (0, 255, 255)
+        if i in test_to_baseline.values():
+            color = (255, 0, 0)
+        cv.rectangle(baseline_img, (bbox[0], bbox[1]), (bbox[0] + bbox[2], bbox[1] + bbox[3]), color, 10)
 
-    # for i, bbox in enumerate(test_annotations):
-    #     color = (255, 255, 255)
-    #     if i in test_to_baseline.keys():
-    #         color = (255, 0, 0)
-    #     elif i in new_objects:
-    #         color = (0, 255, 0)
-    #     elif i in consistent_objects:
-    #         color = (255, 0, 0)
-    #     cv.rectangle(test_img, (bbox[0], bbox[1]), (bbox[0] + bbox[2], bbox[1] + bbox[3]), color, 10)
+    for i, bbox in enumerate(test_annotations):
+        color = (255, 255, 255)
+        if i in test_to_baseline.keys():
+            color = (255, 0, 0)
+        elif i in new_objects:
+            color = (0, 255, 0)
+        elif i in consistent_objects:
+            color = (255, 0, 0)
+        cv.rectangle(test_img, (bbox[0], bbox[1]), (bbox[0] + bbox[2], bbox[1] + bbox[3]), color, 10)
 
-    # #visualize the detections
-    # for bbox in detections:
-    #     cv.rectangle(test_img, (bbox[0], bbox[1]), (bbox[0] + bbox[2], bbox[1] + bbox[3]), (255, 255, 0), 10)
+    #visualize the detections
+    for bbox in detections:
+        cv.rectangle(test_img, (bbox[0], bbox[1]), (bbox[0] + bbox[2], bbox[1] + bbox[3]), (255, 255, 0), 10)
 
-    # # create windows to display images, resized to 900px wide
-    # cv.namedWindow("Baseline", cv.WINDOW_NORMAL)
-    # cv.resizeWindow("Baseline", 900, 900)
-    # cv.imshow("Baseline", baseline_img)
-    # cv.namedWindow("Test", cv.WINDOW_NORMAL)
-    # cv.resizeWindow("Test", 900, 900)
-    # cv.imshow("Test", test_img)
-    # cv.waitKey(0)
-    # cv.destroyAllWindows()
+    # create windows to display images, resized to 900px wide
+    cv.namedWindow("Baseline", cv.WINDOW_NORMAL)
+    cv.resizeWindow("Baseline", 900, 900)
+    cv.imshow("Baseline", baseline_img)
+    cv.namedWindow("Test", cv.WINDOW_NORMAL)
+    cv.resizeWindow("Test", 900, 900)
+    cv.imshow("Test", test_img)
+    cv.waitKey(0)
+    cv.destroyAllWindows()
 
     return tp, fp, fn
 
@@ -278,7 +278,7 @@ for scene in os.listdir(root_path):
             detections = detector.detect(image)
             detections = [det.get_as_array() for det in detections]
             # Evaluate the detections
-            TP, FP, FN = evaluate(detections, dataset["images"][0]["annotations"], file["annotations"], baseline, image, M)
+            TP, FP, FN = evaluate(detections, dataset["images"][0]["annotations"], file["annotations"], M)
             # Export the results in a structured format
             export_results(scene, position, filepath, TP, FP, FN)
 
@@ -290,6 +290,8 @@ df = pd.read_csv(f"detection_results_{timeString}.csv")
 summary = df.groupby(["Scene", "Position"])[["True Positives", "False Positives", "False Negatives"]].sum()
 summary["TP/FP Ratio"] = summary.apply(lambda row: row["True Positives"] / row["False Positives"] if row["False Positives"] > 0 else np.inf, axis=1)
 summary["Precision"] = summary["True Positives"] / (summary["True Positives"] + summary["False Positives"])
+summary["Recall"] = summary["True Positives"] / (summary["True Positives"] + summary["False Negatives"])
+summary["F1 Score"] = 2 * (summary["Precision"] * summary["Recall"]) / (summary["Precision"] + summary["Recall"])
 
 #Save the summary to a file
 summary.to_csv(f"detection_summary_{timeString}.csv")
