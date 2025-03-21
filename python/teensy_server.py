@@ -113,7 +113,7 @@ def index():
                 let commandInput = document.querySelector("input[name='command']");
                 let command = commandInput.value;
                 if (!command.trim()) return;
-                await fetch("/", {
+                await fetch("http://rpi:5000/", {
                     method: "POST",
                     headers: { "Content-Type": "application/x-www-form-urlencoded" },
                     body: "command=" + encodeURIComponent(command)
@@ -122,7 +122,7 @@ def index():
                 fetchLogs();
             }
             async function fetchLogs() {
-                let response = await fetch("/logs");
+                let response = await fetch("http://rpi:5000/logs");
                 let data = await response.json();
                 document.getElementById("logs").innerHTML = data.logs.join("<br>");
             }
