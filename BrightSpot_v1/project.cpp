@@ -90,7 +90,7 @@ void calibrate_galvo(){
   Serial.print(" min_y: ");
   Serial.println(min_y);
 
-  if (center_mirrors_PID(0.5)) {Serial.println("finished centering succesfully");}
+  if (center_mirrors_PID(0.75)) {Serial.println("finished centering succesfully");}
   else {Serial.println("F");}
   
   return;
@@ -327,7 +327,6 @@ bool project_circle(int duration, float magnitude, float frequency) {
   digitalWrite(LASER_PIN, LOW);
   bool end_status = center_mirrors_PID(0.75);
   return true;
-
 }
 
 void laser_on() {

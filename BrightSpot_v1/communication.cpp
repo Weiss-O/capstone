@@ -69,12 +69,12 @@ void pi_communications(String command) {
         Serial.println("S");
       }
       else {
-        Serial.println('Fuck');
+        Serial.println("Fuck");
       }
 
     }
     else{
-      Serial.println('F???');
+      Serial.println("F???");
     }
   }
 
