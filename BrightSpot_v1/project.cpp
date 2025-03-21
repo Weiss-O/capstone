@@ -24,9 +24,9 @@ float sumErr_y = 0.0;
 float e_prev_y = 0.0;
 
 const float Ts = 250; // sample time in micros
-const int minPWM = 900;
+const int minPWM = 1000;
 const int pwmMax = 32767;
-const int threshold = 200;
+const int threshold = 180;
 
 float max_y = 732.0;
 float min_y = 282.0;
