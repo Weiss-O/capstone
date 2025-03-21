@@ -35,7 +35,7 @@ float min_x = 385.0;
 
 float slope_y = 54.0/(max_y - min_y);
 float slope_x = 54.0/(max_x - min_x);
-float offsetx = -27 - (slope_x*min_x);
+float offsetx = -27 - (slope_x*min_x)+1;
 float offsety = -27 - (slope_y*min_y);
 
 const int x_galvo_pin = GALVO_POS_X_R;
