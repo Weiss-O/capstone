@@ -6,7 +6,7 @@ const float pwmFrequency = 1000;
 
 const float kp_x = 500.0;
 const float ki_x = 0.1;
-const float kd_x = 100;
+const float kd_x = 150;
 const float x_scale = 0.7;
 
 const float kp_y = 600.0;
@@ -300,21 +300,21 @@ bool project_circle(int duration, float magnitude, float frequency) {
     float pwm_x = command_motors(GALVO_MOTOR_X1, GALVO_MOTOR_X2, command_x);
     float pwm_y = command_motors(GALVO_MOTOR_Y1, GALVO_MOTOR_Y2, command_y);
     
-    // if (i % 10 == 1) {
-    //   Serial.print(loop_start-start_time);
-    //   Serial.print(",");
-    //   Serial.print(mirrorAngley);
-    //   Serial.print(",");
-    //   Serial.print(refAngley);
-    //   Serial.print(",");
-    //   Serial.print(pwm_y);
-    //   Serial.print(",");
-    //   Serial.print(mirrorAnglex);
-    //   Serial.print(",");
-    //   Serial.print(refAnglex);
-    //   Serial.print(",");
-    //   Serial.println(pwm_x);
-    // }
+    if (i % 5 == 1) {
+      Serial.print(loop_start-start_time);
+      Serial.print(",");
+      Serial.print(mirrorAngley);
+      Serial.print(",");
+      Serial.print(refAngley);
+      Serial.print(",");
+      Serial.print(pwm_y);
+      Serial.print(",");
+      Serial.print(mirrorAnglex);
+      Serial.print(",");
+      Serial.print(refAnglex);
+      Serial.print(",");
+      Serial.println(pwm_x);
+    }
     int loop_end = micros();
     int delay_time  = Ts - (loop_end - loop_start);
     delayMicroseconds(delay_time);
