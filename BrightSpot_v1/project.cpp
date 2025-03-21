@@ -14,7 +14,7 @@ const float ki_y = 0.1;
 const float kd_y = 100;
 
 const float kp_c = 55;
-const float ki_c = 0.07;
+const float ki_c = 0.05;
 const float kd_c = 0;
 
 float sumErr_x = 0.0;
@@ -91,7 +91,7 @@ void calibrate_galvo(){
   Serial.println(min_y);
 
   if (center_mirrors_PID(0.75)) {Serial.println("finished centering succesfully");}
-  else {Serial.println("F");}
+  else {Serial.println("F***");}
   
   return;
 }
