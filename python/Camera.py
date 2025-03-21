@@ -134,6 +134,10 @@ class PiCamera(Camera):
         except Exception as e:
             print(f"Error capturing image: {e}")
             return
+        
+        #Add a crosshare to center of image
+        cv2.drawMarker(image, (image.shape[1]//2, image.shape[0]//2), (0, 0, 255), markerType=cv2.MARKER_CROSS, markerSize=50, thickness=5)
+
         success, encoded_image = cv2.imencode('.jpg', image)
         print("Encoded Image")
         if not success:
