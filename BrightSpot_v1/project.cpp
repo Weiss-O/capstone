@@ -91,7 +91,7 @@ void calibrate_galvo(){
   Serial.println(min_y);
 
   if (center_mirrors_PID(0.75)) {Serial.println("finished centering succesfully");}
-  else {Serial.println("Fow");}
+  else {Serial.println("Fowen");}
   
   return;
 }
