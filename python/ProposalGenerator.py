@@ -6,6 +6,7 @@ from skimage.metrics import structural_similarity
 import ContourAnalysis as CA
 import matplotlib.pyplot as plt
 import datetime
+import os
 
 #Constants:
 
