@@ -131,20 +131,20 @@ class SSIMProposalGenerator(ProposalGenerator):
 
         if warp:
             # Use matplotlib to show the difference map, the contours, bboxes, and mask
-            fig, ax = plt.subplots(1, 4, figsize=(15, 5))
-            ax[0].imshow(diff, cmap="gray")
-            ax[0].set_title("Difference Map")
-            ax[0].axis("off")
-            ax[1].imshow(threshed_img, cmap="gray")
-            ax[1].set_title("Thresholded Image")
-            ax[1].axis("off")
-            ax[2].imshow(bboxes, cmap="gray")
-            ax[2].set_title("Bounding Boxes")
-            ax[2].axis("off")
-            ax[3].imshow(mask, cmap="gray")
-            ax[3].set_title("Mask")
-            ax[3].axis("off")
-            plt.show()
+            # fig, ax = plt.subplots(1, 4, figsize=(15, 5))
+            # ax[0].imshow(diff, cmap="gray")
+            # ax[0].set_title("Difference Map")
+            # ax[0].axis("off")
+            # ax[1].imshow(threshed_img, cmap="gray")
+            # ax[1].set_title("Thresholded Image")
+            # ax[1].axis("off")
+            # ax[2].imshow(bboxes, cmap="gray")
+            # ax[2].set_title("Bounding Boxes")
+            # ax[2].axis("off")
+            # ax[3].imshow(mask, cmap="gray")
+            # ax[3].set_title("Mask")
+            # ax[3].axis("off")
+            # plt.show()
             return proposals, warped_image
         else:
             return proposals

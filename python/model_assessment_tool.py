@@ -8,10 +8,13 @@ import ProposalGenerator as PG
 import numpy as np
 import cv2 as cv
 import yaml
+import datetime
 
 #globals for baseline and test
 baseline = None
 image = None
+timeString = datetime.datetime.now().strftime("%H:%M:%S")
+iouThreshold_detections = 0.1
 #Create Detector Object
 testPredictor = CL.SAM2Predictor()
 
@@ -55,11 +58,13 @@ def evaluate(detections: List[List[int]], baseline_annotations: List[List[int]],
     consistent_objects = set(test_to_baseline.keys())
     old_objects = set(range(len(baseline_annotations))) - set(test_to_baseline.values())
     
-    tp, fp = 0, 0
+    tp, fp, fn = 0, 0, 0
+    
+    detected_new_objects = set()
     
     for detection in detections:
         best_match = -1
-        best_iou = 0.5  # Same IoU threshold
+        best_iou = iouThreshold_detections  # Same IoU threshold
         match_type = None
         
         for obj_set, label in [(new_objects, "new"), (consistent_objects, "consistent"), (old_objects, "old")]:
@@ -71,12 +76,17 @@ def evaluate(detections: List[List[int]], baseline_annotations: List[List[int]],
                     match_type = label
         
         if best_match != -1:
-            if match_type in ["new", "old"]:
+            if match_type == "new":
+                tp += 1
+                detected_new_objects.add(best_match)
+            elif match_type == "old":
                 tp += 1
             elif match_type == "consistent":
                 fp += 1
         else:
             fp += 1  # Detection didn't match anything
+    
+    fn = len(new_objects - detected_new_objects)  # New objects that were not detected
     
     #visualize the bboxes. green for new, red for old, blue for consistent. yellow are baseline bboxes, white are detection bboxes
 
@@ -110,7 +120,7 @@ def evaluate(detections: List[List[int]], baseline_annotations: List[List[int]],
     # cv.waitKey(0)
     # cv.destroyAllWindows()
 
-    return tp, fp
+    return tp, fp, fn
 
 def iou(box1, box2):
     """Calculate Intersection over Union (IoU) between two bounding boxes."""
@@ -168,18 +178,18 @@ def associate_bboxes(boxes1: List[List[int]], boxes2: List[List[int]], iou_thres
 root_path = "python/scans/"
 
 #For folder in root_path
-def export_results(scene, position, filename, tp, fp):
+def export_results(scene, position, filename, tp, fp, fn):
     """
     Export detection evaluation results in a structured format.
     Saves results in CSV format for easy analysis.
     """
-    output_file = "detection_results_2.csv"
+    output_file = f"detection_results_{timeString}.csv"
     file_exists = os.path.isfile(output_file)
     
     with open(output_file, "a") as f:
         if not file_exists:
-            f.write("Scene,Position,File,True Positives,False Positives\n")
-        f.write(f"{scene},{position},{filename},{tp},{fp}\n")
+            f.write("Scene,Position,File,True Positives,False Positives,False Negatives\n")
+        f.write(f"{scene},{position},{filename},{tp},{fp},{fn}\n")
 
 
 def warp_bboxes(bboxes, M):
@@ -268,18 +278,18 @@ for scene in os.listdir(root_path):
             detections = detector.detect(image)
             detections = [det.get_as_array() for det in detections]
             # Evaluate the detections
-            TP, FP = evaluate(detections, dataset["images"][0]["annotations"], file["annotations"], baseline, image, M)
+            TP, FP, FN = evaluate(detections, dataset["images"][0]["annotations"], file["annotations"], baseline, image, M)
             # Export the results in a structured format
-            export_results(scene, position, filepath, TP, FP)
+            export_results(scene, position, filepath, TP, FP, FN)
 
 print("Detection evaluation complete.")
 print("Results exported to detection_results.csv.")
 
-#Open the file and dispplay summary statistics
 import pandas as pd
-df = pd.read_csv("detection_results_2.csv")
-df = pd.read_csv("detection_results_2.csv")
-summary = df.groupby(["Scene", "Position"])[["True Positives", "False Positives"]].sum()
+df = pd.read_csv(f"detection_results_{timeString}.csv")
+summary = df.groupby(["Scene", "Position"])[["True Positives", "False Positives", "False Negatives"]].sum()
 summary["TP/FP Ratio"] = summary.apply(lambda row: row["True Positives"] / row["False Positives"] if row["False Positives"] > 0 else np.inf, axis=1)
 summary["Precision"] = summary["True Positives"] / (summary["True Positives"] + summary["False Positives"])
-print(summary)
+
+#Save the summary to a file
+summary.to_csv(f"detection_summary_{timeString}.csv")
