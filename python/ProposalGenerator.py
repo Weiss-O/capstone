@@ -34,6 +34,7 @@ class SSIMProposalGenerator(ProposalGenerator):
     def generateProposals(self, image, **kwargs) -> list:
         kwargs = kwargs
         warp = kwargs.get("warp", False)
+        modified_baseline = self.baseline.copy()
         try:
             if warp:
                 # Detect the ORB keypoints and descriptors
@@ -64,8 +65,39 @@ class SSIMProposalGenerator(ProposalGenerator):
                 warped_image = cv2.warpAffine(image, M, (self.baseline.shape[1], self.baseline.shape[0]))
 
                 mask = (warped_image == 0)
-                self.baseline[mask] = 0
-                self.baseline_preprocessed = self.preprocess(self.baseline)
+                baseline_for_warping = self.baseline.copy()
+                baseline_for_warping[mask] = 0
+
+                orb = cv2.ORB_create()
+                kp1, des1 = orb.detectAndCompute(baseline_for_warping, None)
+                kp2, des2 = orb.detectAndCompute(warped_image, None)
+
+                # Match keypoints using BFMatcher
+                bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+                matches = bf.match(des1, des2)
+                matches = sorted(matches, key=lambda x: x.distance)
+
+                # Ensure there are enough matches
+                if len(matches) < 4:
+                    raise ValueError("Not enough matches found between the images")
+
+                # Extract point correspondences
+                dst_pts = np.float32([kp1[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
+                src_pts = np.float32([kp2[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
+
+                # Assert that the number of points matches
+                assert len(dst_pts) == len(src_pts), "Number of points does not match"
+
+                # Compute homography (or affine if only rotation/translation)
+                Q, mask = cv2.findHomography(src_pts, dst_pts, method=cv2.RANSAC)
+
+                # Warp image
+                warped_image = cv2.warpPerspective(warped_image, Q, (baseline_for_warping.shape[1], baseline_for_warping.shape[0]))
+
+                mask = (warped_image == 0)
+                modified_baseline[mask] = 0
+
+                self.baseline_preprocessed = self.preprocess(modified_baseline)
                 image_preprocessed = self.preprocess(warped_image)
             else:
                 image_preprocessed = self.preprocess(image)
