@@ -1,0 +1,59 @@
+---
+camera_settings:
+  resolution:
+  - 4608
+  - 2592
+  orientation: portrait
+  LensPosition: 0.23
+  distortion_matrix: [0.0, 0.0, 0.0, 0.0, 0.0]
+controller_settings:
+  baudrate: 9600
+  port: "/dev/ttyACM1"
+  timeout: 1
+  steps_per_revolution: 2048
+  camera_offset:
+    radial: 50
+    theta: 45
+    phi: 45
+  projector_offset:
+    radial: 50
+    theta: -5
+    phi: 0
+    theta_tilt: 0
+    phi_tilt: 0
+  projector_ROM:
+    alpha: 10
+    beta: 10
+  backlash:
+    theta: 10
+    phi: 40  
+server_settings:
+  HOST: '100.72.50.30'
+  PORT: 5000
+sam2_model:
+  config_path: configs/sam2.1/sam2.1_hiera_l.yaml
+  checkpoint_path: checkpoints/sam2.1_hiera_large.pt
+idle_time_vacant: 5
+idle_time_occupied: 5
+baseline:
+  POS1:
+    image_path: python/test_set/capture_2.jpg
+    camera_pos:
+    - 45
+    - 60
+  POS2:
+    image_path: python/test_set/capture_2.jpg
+    camera_pos:
+    - 80
+    - 39
+  POS3:
+    image_path: python/test_set/capture_2.jpg
+    camera_pos:
+    - 45
+    - 39
+  POS4:
+    image_path: python/test_set/capture_2.jpg
+    camera_pos:
+    - 10
+    - 39
+initial_state: 1
